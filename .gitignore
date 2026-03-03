@@ -1,0 +1,13 @@
+#Mac OS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+#Editeurs de code
+.vscode/
+.idea/
+*.swp
+
+#C++
+objs/
+gomoku
