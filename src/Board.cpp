@@ -61,3 +61,46 @@ void Board::printBoard() const {
 		std::cout << std::endl;
 	}
 }
+
+//fct that checks 4 stone in the given direction after the last placed stone
+int Board::_countDirection(int x, int y, int dx, int dy, e_stone stone) const {
+    int count = 0;
+
+    //for 4 stones, getting coordinates of the wanted direction
+    for (int i = 1; i <= 4; ++i) {
+        int nx = x + (i * dx);
+        int ny = y + (i * dy);
+
+        //stoping if getting outside the grid
+        if (nx < 0 || nx >= 19 || ny < 0 || ny >= 19)
+            break;
+
+        //if the stone is of the color of the player, counting one more in the alignement
+        if (this->_grid[ny][nx] == stone)
+            count++;
+        else
+            break;
+    }
+    return count;
+}
+
+//checks if the last stone is making an alignement of 5 or more
+bool Board::checkWin(int x, int y, e_stone stone) const {
+    //horizontal : right (1, 0) + left (-1, 0)
+    if (1 + this->_countDirection(x, y, 1, 0, stone) + this->_countDirection(x, y, -1, 0, stone) >= 5)
+        return true;
+
+    //vertical : down (0, 1) + up (0, -1)
+    if (1 + this->_countDirection(x, y, 0, 1, stone) + this->_countDirection(x, y, 0, -1, stone) >= 5)
+        return true;
+
+    //diagonal 1 : down-right (1, 1) + up-left (-1, -1)
+    if (1 + this->_countDirection(x, y, 1, 1, stone) + this->_countDirection(x, y, -1, -1, stone) >= 5)
+        return true;
+
+    //diagonal 2 : down-left (-1, 1) + up-right (1, -1)
+    if (1 + this->_countDirection(x, y, -1, 1, stone) + this->_countDirection(x, y, 1, -1, stone) >= 5)
+        return true;
+
+    return false;
+}

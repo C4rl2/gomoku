@@ -34,6 +34,7 @@ void Game::_printTurnInfo() const {
 	std::cout << "Entrez les coordonnees X et Y (ex: 9 9) pour poser votre pierre ou CTRL+D pour quitter : ";
 }
 
+//start the game logic
 void Game::run() {
 	int x, y;
 
@@ -51,11 +52,21 @@ void Game::run() {
 			}
 			std::cout << "Entree invalide. Veuillez entrer deux nombres entre 0 et 18." << std::endl;
 			std::cin.clear();
-			std::cin.ignore(10000, '\n'); 
+			std::cin.ignore(10000, '\n'); //ugly arbitrary number, but will disapear when the game's gonna be playable on the web
 			continue;
 		}
 
 		if (this->_board.setStone(x, y, this->_currentPlayer)) {
+			if (this->_board.checkWin(x, y, this->_currentPlayer)) {
+                std::cout << std::endl;
+                this->_board.printBoard();
+
+                std::string winnerName = (this->_currentPlayer == BLACK) ? "Noir (X)" : "Blanc (O)";
+                std::cout << "\n======================================" << std::endl;
+                std::cout << " GAGNANT : " << winnerName << " !  " << std::endl;
+                std::cout << "======================================" << std::endl;
+                break;
+			}
 			this->_switchPlayer();
 		} else {
 			std::cout << "Coup invalide ! La case est deja occupee ou hors limites." << std::endl;

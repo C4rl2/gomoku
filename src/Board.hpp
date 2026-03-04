@@ -14,6 +14,8 @@ class Board {
 	private:
 		e_stone _grid[19][19];
 
+		int		_countDirection(int x, int y, int dx, int dy, e_stone stone) const;
+
 	public:
 		Board();
 		Board(const Board &other);
@@ -24,6 +26,8 @@ class Board {
 		bool	setStone(int x, int y, e_stone stone);
 
 		void	printBoard() const;
+
+		bool	checkWin(int x, int y, e_stone stone) const;
 };
 
 #endif
