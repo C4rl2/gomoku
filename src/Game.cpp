@@ -4,6 +4,8 @@
 
 Game::Game() {
 	this->_currentPlayer = BLACK; //black always starts
+	this->_capturesBlack = 0;
+	this->_capturesWhite = 0;
 }
 
 Game::Game(const Game &other) {
@@ -14,6 +16,8 @@ Game &Game::operator=(const Game &other) {
 	if (this != &other) {
 		this->_board = other._board;
 		this->_currentPlayer = other._currentPlayer;
+		this->_capturesBlack = other._capturesBlack;
+		this->_capturesWhite = other._capturesWhite;
 	}
 	return *this;
 }
@@ -29,6 +33,7 @@ void Game::_switchPlayer() {
 }
 
 void Game::_printTurnInfo() const {
+	std::cout << "Scores Captures - Noir : " << this->_capturesBlack << " | Blanc : " << this->_capturesWhite << std::endl;
 	std::string playerName = (this->_currentPlayer == BLACK) ? "Noir (X)" : "Blanc (O)";
 	std::cout << "\nTour du joueur " << playerName << "." << std::endl;
 	std::cout << "Entrez les coordonnees X et Y (ex: 9 9) pour poser votre pierre ou CTRL+D pour quitter : ";
@@ -57,15 +62,28 @@ void Game::run() {
 		}
 
 		if (this->_board.setStone(x, y, this->_currentPlayer)) {
-			if (this->_board.checkWin(x, y, this->_currentPlayer)) {
-                std::cout << std::endl;
-                this->_board.printBoard();
+			//detecting captures and incremeting scores
+			int captures = this->_board.executeCaptures(x, y, this->_currentPlayer);
+			if (captures > 0) {
+				if (this->_currentPlayer == BLACK)
+					this->_capturesBlack += captures;
+				else
+					this->_capturesWhite += captures;
+			}
 
-                std::string winnerName = (this->_currentPlayer == BLACK) ? "Noir (X)" : "Blanc (O)";
-                std::cout << "\n======================================" << std::endl;
-                std::cout << " GAGNANT : " << winnerName << " !  " << std::endl;
-                std::cout << "======================================" << std::endl;
-                break;
+			//checking for wins
+			bool winByAlignment = this->_board.checkWin(x, y, this->_currentPlayer);
+			bool winByCapture = (this->_currentPlayer == BLACK && this->_capturesBlack >= 5) || 
+								(this->_currentPlayer == WHITE && this->_capturesWhite >= 5);
+
+			if (winByAlignment || winByCapture) {
+				std::cout << std::endl;
+				this->_board.printBoard();
+				std::string winnerName = (this->_currentPlayer == BLACK) ? "Noir (X)" : "Blanc (O)";
+				std::cout << "\n======================================" << std::endl;
+				std::cout << " GAGNANT : " << winnerName << " !  " << std::endl;
+				std::cout << "======================================" << std::endl;
+				break;
 			}
 			this->_switchPlayer();
 		} else {

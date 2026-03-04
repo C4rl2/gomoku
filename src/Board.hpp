@@ -27,6 +27,7 @@ class Board {
 
 		void	printBoard() const;
 
+		int		executeCaptures(int x, int y, e_stone stone);
 		bool	checkWin(int x, int y, e_stone stone) const;
 };
 
