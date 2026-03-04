@@ -32,7 +32,7 @@ e_stone Board::getStone(int x, int y) const {
 	return EMPTY; //if outside the board
 }
 
-//place a stone (return false if occupied or outside)
+//place a stone (return false if occupied or outside the board)
 bool Board::setStone(int x, int y, e_stone stone) {
 	if (x >= 0 && x < 19 && y >= 0 && y < 19) {
 		if (this->_grid[y][x] == EMPTY) {

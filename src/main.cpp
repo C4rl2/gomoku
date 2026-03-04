@@ -1,16 +1,10 @@
 #include "Board.hpp"
+#include "Game.hpp"
 
 int main() {
-	Board board;
+	Game gomoku;
 
-	std::cout << "Placement d'une pierre noire au centre (9, 9)..." << std::endl;
-	board.setStone(9, 9, BLACK);
-
-	std::cout << "Placement d'une pierre blanche à côté (10, 9)..." << std::endl;
-	board.setStone(10, 9, WHITE);
-
-	std::cout << "\nÉtat du plateau :" << std::endl;
-	board.printBoard();
+	gomoku.run();
 
 	return 0;
 }
