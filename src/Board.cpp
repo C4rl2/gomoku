@@ -84,24 +84,48 @@ int Board::_countDirection(int x, int y, int dx, int dy, e_stone stone) const {
 	return count;
 }
 
-//checks if the last stone is making an alignement of 5 or more
+//checks if the last stone is making an alignement of 5 or more and if it is breakable
 bool Board::checkWin(int x, int y, e_stone stone) const {
-	//horizontal : right (1, 0) + left (-1, 0)
-	if (1 + this->_countDirection(x, y, 1, 0, stone) + this->_countDirection(x, y, -1, 0, stone) >= 5)
-		return true;
+	//4 axes, dx and dy goes both ways
+	int axes[4][2] = {{1, 0}, {0, 1}, {1, 1}, {1, -1}};
 
-	//vertical : down (0, 1) + up (0, -1)
-	if (1 + this->_countDirection(x, y, 0, 1, stone) + this->_countDirection(x, y, 0, -1, stone) >= 5)
-		return true;
+	for (int i = 0; i < 4; ++i) {
+		int dx = axes[i][0];
+		int dy = axes[i][1];
 
-	//diagonal 1 : down-right (1, 1) + up-left (-1, -1)
-	if (1 + this->_countDirection(x, y, 1, 1, stone) + this->_countDirection(x, y, -1, -1, stone) >= 5)
-		return true;
+		//counting stones aligned
+		int countForward = this->_countDirection(x, y, dx, dy, stone);
+		int countBackward = this->_countDirection(x, y, -dx, -dy, stone);
 
-	//diagonal 2 : down-left (-1, 1) + up-right (1, -1)
-	if (1 + this->_countDirection(x, y, -1, 1, stone) + this->_countDirection(x, y, 1, -1, stone) >= 5)
-		return true;
+		//if 5 or more aligned
+		if (1 + countForward + countBackward >= 5) {
+			bool isBreakable = false;
 
+			//checking if last stone played is vulnerable
+			if (this->_isVulnerable(x, y, stone)) {
+				isBreakable = true;
+			}
+
+			//checking if forward stones are vulnerable
+			for (int j = 1; j <= countForward && !isBreakable; ++j) {
+				if (this->_isVulnerable(x + (j * dx), y + (j * dy), stone)) {
+					isBreakable = true;
+				}
+			}
+
+			//checking if backward stones are vulnerable
+			for (int j = 1; j <= countBackward && !isBreakable; ++j) {
+				if (this->_isVulnerable(x - (j * dx), y - (j * dy), stone)) {
+					isBreakable = true;
+				}
+			}
+
+			//if no stones are vulnerable, win
+			if (!isBreakable) {
+				return true; 
+			}
+		}
+	}
 	return false;
 }
 
@@ -135,4 +159,36 @@ int	Board::executeCaptures(int x, int y, e_stone stone) {
 		}
 	}
 	return capturedPairs;
+}
+
+bool Board::_isVulnerable(int x, int y, e_stone stone) const {
+	e_stone opponent = (stone == BLACK) ? WHITE : BLACK;
+	int directions[8][2] = {
+		{1, 0}, {-1, 0}, {0, 1}, {0, -1},
+		{1, 1}, {-1, -1}, {1, -1}, {-1, 1}
+	};
+
+	for (int i = 0; i < 8; ++i) {
+		int dx = directions[i][0];
+		int dy = directions[i][1];
+
+		int nx_minus1 = x - dx;
+		int ny_minus1 = y - dy; //back (should be opponent)
+		int nx_plus1 = x + dx;
+		int ny_plus1 = y + dy; // front (should be stone)
+		int nx_plus2 = x + (2 * dx);
+		int ny_plus2 = y + (2 * dy); //2 grid in front (should be empty)
+
+        //checking the ends for secure memory access
+		if (nx_minus1 >= 0 && nx_minus1 < 19 && ny_minus1 >= 0 && ny_minus1 < 19 &&
+			nx_plus2 >= 0 && nx_plus2 < 19 && ny_plus2 >= 0 && ny_plus2 < 19) {
+			//searching for opponent, stone, stone, empty
+			if (this->_grid[ny_minus1][nx_minus1] == opponent &&
+				this->_grid[ny_plus1][nx_plus1] == stone &&
+				this->_grid[ny_plus2][nx_plus2] == EMPTY) {
+				return true; //alignement is actually breakable
+			}
+		}
+	}
+	return false; //alignement is not breakable
 }

@@ -15,6 +15,7 @@ class Board {
 		e_stone _grid[19][19];
 
 		int		_countDirection(int x, int y, int dx, int dy, e_stone stone) const;
+		bool	_isVulnerable(int x, int y, e_stone stone) const;
 
 	public:
 		Board();
