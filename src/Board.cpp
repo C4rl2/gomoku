@@ -103,7 +103,7 @@ e_win_state Board::checkWin(int x, int y, e_stone stone) const {
 		//if 5 or more aligned
 		if (1 + countForward + countBackward >= 5) {
 			foundFive = true;
-			bool currentLineBreakable = false
+			bool currentLineBreakable = false;
 
 			//checking if last stone played is vulnerable
 			if (this->_isVulnerable(x, y, stone)) {

@@ -71,11 +71,6 @@ void Game::run() {
 					this->_capturesWhite += captures;
 			}
 
-			//checking for wins
-			bool winByAlignment = this->_board.checkWin(x, y, this->_currentPlayer);
-			bool winByCapture = (this->_currentPlayer == BLACK && this->_capturesBlack >= 5) || 
-								(this->_currentPlayer == WHITE && this->_capturesWhite >= 5);
-
 			e_stone opponent = (this->_currentPlayer == BLACK) ? WHITE : BLACK;
 			if (this->_board.hasFive(opponent)) {
 				std::cout << std::endl;
@@ -88,11 +83,12 @@ void Game::run() {
 				break;
 			}
 
+			
 			e_win_state winState = this->_board.checkWin(x, y, this->_currentPlayer);
 			bool winByCapture = (this->_currentPlayer == BLACK && this->_capturesBlack >= 5) ||
 								(this->_currentPlayer == WHITE && this->_capturesWhite >= 5);
 
-			if (winByAlignment || winByCapture) {
+			if (winState == WIN || winByCapture) {
 				std::cout << std::endl;
 				this->_board.printBoard();
 				std::string winnerName = (this->_currentPlayer == BLACK) ? "Noir (X)" : "Blanc (O)";
