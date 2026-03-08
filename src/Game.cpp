@@ -76,6 +76,22 @@ void Game::run() {
 			bool winByCapture = (this->_currentPlayer == BLACK && this->_capturesBlack >= 5) || 
 								(this->_currentPlayer == WHITE && this->_capturesWhite >= 5);
 
+			e_stone opponent = (this->_currentPlayer == BLACK) ? WHITE : BLACK;
+			if (this->_board.hasFive(opponent)) {
+				std::cout << std::endl;
+				this->_board.printBoard();
+				std::string winnerName = (opponent == BLACK) ? "Noir (X)" : "Blanc (O)";
+				std::cout << "\n======================================" << std::endl;
+				std::cout << "  VICTOIRE DU JOUEUR " << winnerName << " !  " << std::endl;
+				std::cout << "  (L'adversaire n'a pas cassé l'alignement)" << std::endl;
+				std::cout << "======================================" << std::endl;
+				break;
+			}
+
+			e_win_state winState = this->_board.checkWin(x, y, this->_currentPlayer);
+			bool winByCapture = (this->_currentPlayer == BLACK && this->_capturesBlack >= 5) ||
+								(this->_currentPlayer == WHITE && this->_capturesWhite >= 5);
+
 			if (winByAlignment || winByCapture) {
 				std::cout << std::endl;
 				this->_board.printBoard();
@@ -84,7 +100,10 @@ void Game::run() {
 				std::cout << " GAGNANT : " << winnerName << " !  " << std::endl;
 				std::cout << "======================================" << std::endl;
 				break;
+			} else if (winState == BREAKABLE_FIVE) {
+				std::cout << "\n[!] ALERTE : Alignement de 5 cassable crée !" << std::endl;
 			}
+
 			this->_switchPlayer();
 		} else {
 			std::cout << "Coup invalide ! La case est deja occupee ou hors limites." << std::endl;

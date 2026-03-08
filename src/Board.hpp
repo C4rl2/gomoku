@@ -10,6 +10,12 @@ enum e_stone {
 	WHITE = 2
 };
 
+enum e__win_state {
+	NONE = 0,
+	WIN = 1,
+	BREAKABLE_FIVE = 2
+};
+
 class Board {
 	private:
 		e_stone _grid[19][19];
@@ -23,13 +29,14 @@ class Board {
 		Board &operator=(const Board &other);
 		~Board();
 
-		e_stone	getStone(int x, int y) const;
-		bool	setStone(int x, int y, e_stone stone);
+		e_stone			getStone(int x, int y) const;
+		bool			setStone(int x, int y, e_stone stone);
 
-		void	printBoard() const;
+		void			printBoard() const;
 
-		int		executeCaptures(int x, int y, e_stone stone);
-		bool	checkWin(int x, int y, e_stone stone) const;
+		int				executeCaptures(int x, int y, e_stone stone);
+		e__win_state	checkWin(int x, int y, e_stone stone) const;
+		bool			hasFive(e_stone stone) const;
 };
 
 #endif

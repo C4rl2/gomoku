@@ -85,7 +85,10 @@ int Board::_countDirection(int x, int y, int dx, int dy, e_stone stone) const {
 }
 
 //checks if the last stone is making an alignement of 5 or more and if it is breakable
-bool Board::checkWin(int x, int y, e_stone stone) const {
+e_win_state Board::checkWin(int x, int y, e_stone stone) const {
+	bool foundFive = false;
+	bool isBreakable = false;
+
 	//4 axes, dx and dy goes both ways
 	int axes[4][2] = {{1, 0}, {0, 1}, {1, 1}, {1, -1}};
 
@@ -99,30 +102,52 @@ bool Board::checkWin(int x, int y, e_stone stone) const {
 
 		//if 5 or more aligned
 		if (1 + countForward + countBackward >= 5) {
-			bool isBreakable = false;
+			foundFive = true;
+			bool currentLineBreakable = false
 
 			//checking if last stone played is vulnerable
 			if (this->_isVulnerable(x, y, stone)) {
-				isBreakable = true;
+				currentLineBreakable = true;
 			}
 
 			//checking if forward stones are vulnerable
-			for (int j = 1; j <= countForward && !isBreakable; ++j) {
+			for (int j = 1; j <= countForward && !currentLineBreakable; ++j) {
 				if (this->_isVulnerable(x + (j * dx), y + (j * dy), stone)) {
-					isBreakable = true;
+					currentLineBreakable = true;
 				}
 			}
 
 			//checking if backward stones are vulnerable
-			for (int j = 1; j <= countBackward && !isBreakable; ++j) {
+			for (int j = 1; j <= countBackward && !currentLineBreakable; ++j) {
 				if (this->_isVulnerable(x - (j * dx), y - (j * dy), stone)) {
-					isBreakable = true;
+					currentLineBreakable = true;
 				}
 			}
 
-			//if no stones are vulnerable, win
-			if (!isBreakable) {
-				return true; 
+			//stones not vulnerable, win
+			if (!currentLineBreakable) {
+				return WIN;
+			} else {
+				isBreakable = true;
+			}
+		}
+	}
+	if (foundFive && isBreakable)
+		return BREAKABLE_FIVE; //alignement but breakable
+	return NONE; //no alignements
+}
+
+bool Board::hasFive(e_stone stone) const {
+	for (int y = 0; y < 19; ++y) {
+		for (int x = 0; x < 19; ++x) {
+			//when stone, test 4 directions
+			if (this->_grid[y][x] == stone) {
+				if (this->_countDirection(x, y, 1, 0, stone) >= 4 ||  //right
+					this->_countDirection(x, y, 0, 1, stone) >= 4 ||  //down
+					this->_countDirection(x, y, 1, 1, stone) >= 4 ||  //diagonal down-right
+					this->_countDirection(x, y, -1, 1, stone) >= 4) { //diagonal down-left
+					return true;
+				}
 			}
 		}
 	}
