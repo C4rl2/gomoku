@@ -61,6 +61,11 @@ void Game::run() {
 			continue;
 		}
 
+		if (this->_board.isDoubleThree(x, y, this->_currentPlayer)) {
+			std::cout << "Coup interdit ! Double trois détecté." << std::endl;
+			continue;
+		}
+
 		if (this->_board.setStone(x, y, this->_currentPlayer)) {
 			//detecting captures and incremeting scores
 			int captures = this->_board.executeCaptures(x, y, this->_currentPlayer);

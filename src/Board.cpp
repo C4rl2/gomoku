@@ -68,8 +68,8 @@ int Board::_countDirection(int x, int y, int dx, int dy, e_stone stone) const {
 
 	//for 4 stones, getting coordinates of the wanted direction
 	for (int i = 1; i <= 4; ++i) {
-		int nx = x + (i * dx);
-		int ny = y + (i * dy);
+		int nx = x + i * dx;
+		int ny = y + i * dy;
 
 		//stoping if getting outside the grid
 		if (nx < 0 || nx >= 19 || ny < 0 || ny >= 19)
@@ -82,6 +82,77 @@ int Board::_countDirection(int x, int y, int dx, int dy, e_stone stone) const {
 			break;
 	}
 	return count;
+}
+
+//return 1 if stone, 0 if empty, -1 if wall or opponent
+int Board::_getRelative(int x, int y, int i, int dx, int dy, e_stone stone) const {
+	if (i == 0)
+		return 1; //simulated stone
+	int nx = x + i * dx;
+	int ny = y + i * dy;
+	if (nx < 0 || nx >= 19 || ny < 0 || ny >= 19)
+		return -1; //wall
+	if (this->_grid[ny][nx] == stone)
+		return 1; //stone
+	if (this->_grid[ny][nx] == EMPTY)
+		return 0;
+	return -1; //opponent
+}
+
+//searching for all free-three paterns existing
+bool Board::_isFreeThreeInDir(int x, int y, int dx, int dy, e_stone stone) const {
+	//pattern 1 : .XXX.
+	for (int i = -2; i <= 0; ++i) {
+		if (i == 0 || i == -1 || i == -2) {
+			if (_getRelative(x, y, i - 1, dx, dy, stone) == 0 &&
+				_getRelative(x, y, i, dx, dy, stone) == 1 &&
+				_getRelative(x, y, i + 1, dx, dy, stone) == 1 &&
+				_getRelative(x, y, i + 2, dx, dy, stone) == 1 &&
+				_getRelative(x, y, i + 3, dx, dy, stone) == 0) {
+				return true;
+			}
+		}
+	}
+
+	//pattern 2 : .XX.X.
+	for (int i = -3; i <= 0; ++i) {
+		if (i == 0 || i == -1 || i == -3) {
+			if (_getRelative(x, y, i - 1, dx, dy, stone) == 0 &&
+				_getRelative(x, y, i, dx, dy, stone) == 1 &&
+				_getRelative(x, y, i + 1, dx, dy, stone) == 1 &&
+				_getRelative(x, y, i + 2, dx, dy, stone) == 0 &&
+				_getRelative(x, y, i + 3, dx, dy, stone) == 1 &&
+				_getRelative(x, y, i + 4, dx, dy, stone) == 0) {
+				return true;
+			}
+		}
+	}
+
+	//pattern 3 : .X.XX.
+	for (int i = -3; i <= 0; ++i) {
+		if (i == 0 || i == -2 || i == -3) {
+			if (_getRelative(x, y, i - 1, dx, dy, stone) == 0 &&
+				_getRelative(x, y, i, dx, dy, stone) == 1 &&
+				_getRelative(x, y, i + 1, dx, dy, stone) == 0 &&
+				_getRelative(x, y, i + 2, dx, dy, stone) == 1 &&
+				_getRelative(x, y, i + 3, dx, dy, stone) == 1 &&
+				_getRelative(x, y, i + 4, dx, dy, stone) == 0) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+bool Board::isDoubleThree(int x, int y, e_stone stone) const {
+	int axes[4][2] = {{1, 0}, {0, 1}, {1, 1}, {1, -1}};
+	int freeThreeCount = 0;
+
+	for (int i = 0; i < 4; ++i) {
+		if (this->_isFreeThreeInDir(x, y, axes[i][0], axes[i][1], stone))
+			freeThreeCount++;
+	}
+	return freeThreeCount >= 2;
 }
 
 //checks if the last stone is making an alignement of 5 or more and if it is breakable
@@ -112,14 +183,14 @@ e_win_state Board::checkWin(int x, int y, e_stone stone) const {
 
 			//checking if forward stones are vulnerable
 			for (int j = 1; j <= countForward && !currentLineBreakable; ++j) {
-				if (this->_isVulnerable(x + (j * dx), y + (j * dy), stone)) {
+				if (this->_isVulnerable(x + j * dx, y + j * dy, stone)) {
 					currentLineBreakable = true;
 				}
 			}
 
 			//checking if backward stones are vulnerable
 			for (int j = 1; j <= countBackward && !currentLineBreakable; ++j) {
-				if (this->_isVulnerable(x - (j * dx), y - (j * dy), stone)) {
+				if (this->_isVulnerable(x - j * dx, y - j * dy, stone)) {
 					currentLineBreakable = true;
 				}
 			}
@@ -167,18 +238,18 @@ int	Board::executeCaptures(int x, int y, e_stone stone) {
 		int dy = direction[i][1]; //y of the eight directions
 
 		//coordinates of the 3rd intersection in the given direction
-		int nx3 = x + (3 * dx);
-		int ny3 = y + (3 * dy);
+		int nx3 = x + 3 * dx;
+		int ny3 = y + 3 * dy;
 
 		//memory access protection in the if
 		if (nx3 >= 0 && nx3 < 19 && ny3 >= 0 && ny3 < 19) {
 			//searching for XOOX or OXXO (capture)
 			if (this->_grid[y + dy][x + dx] == opponent &&
-				this->_grid[y + (2 * dy)][x + (2 * dx)] == opponent &&
+				this->_grid[y + 2 * dy][x + 2 * dx] == opponent &&
 				this->_grid[ny3][nx3] == stone) {
 					//capturing
 					this->_grid[y + dy][x + dx] = EMPTY;
-					this->_grid[y + (2 * dy)][x + (2 * dx)] = EMPTY;
+					this->_grid[y + 2 * dy][x + 2 * dx] = EMPTY;
 					capturedPairs++;
 				}
 		}
@@ -201,8 +272,8 @@ bool Board::_isVulnerable(int x, int y, e_stone stone) const {
 		int ny_minus1 = y - dy; //back (should be opponent)
 		int nx_plus1 = x + dx;
 		int ny_plus1 = y + dy; // front (should be stone)
-		int nx_plus2 = x + (2 * dx);
-		int ny_plus2 = y + (2 * dy); //2 grid in front (should be empty)
+		int nx_plus2 = x + 2 * dx;
+		int ny_plus2 = y + 2 * dy; //2 grid in front (should be empty)
 
         //checking the ends for secure memory access
 		if (nx_minus1 >= 0 && nx_minus1 < 19 && ny_minus1 >= 0 && ny_minus1 < 19 &&

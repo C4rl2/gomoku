@@ -22,6 +22,8 @@ class Board {
 
 		int		_countDirection(int x, int y, int dx, int dy, e_stone stone) const;
 		bool	_isVulnerable(int x, int y, e_stone stone) const;
+		int		_getRelative(int x, int y, int i, int dx, int dy, e_stone stone) const;
+		bool	_isFreeThreeInDir(int x, int y, int dx, int dy, e_stone stone) const;
 
 	public:
 		Board();
@@ -35,8 +37,9 @@ class Board {
 		void			printBoard() const;
 
 		int				executeCaptures(int x, int y, e_stone stone);
-		e_win_state	checkWin(int x, int y, e_stone stone) const;
+		e_win_state		checkWin(int x, int y, e_stone stone) const;
 		bool			hasFive(e_stone stone) const;
+		bool			isDoubleThree(int x, int y, e_stone stone) const;
 };
 
 #endif
