@@ -40,6 +40,7 @@ class Board {
 		e_win_state		checkWin(int x, int y, e_stone stone) const;
 		bool			hasFive(e_stone stone) const;
 		bool			isDoubleThree(int x, int y, e_stone stone) const;
+		bool			willCapture(int x, int y, e_stone stone) const;
 };
 
 #endif

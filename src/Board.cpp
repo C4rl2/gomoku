@@ -62,7 +62,7 @@ void Board::printBoard() const {
 	}
 }
 
-//fct that checks 4 stone in the given direction after the last placed stone
+//checks 4 stone in the given direction after the last placed stone
 int Board::_countDirection(int x, int y, int dx, int dy, e_stone stone) const {
 	int count = 0;
 
@@ -71,7 +71,7 @@ int Board::_countDirection(int x, int y, int dx, int dy, e_stone stone) const {
 		int nx = x + i * dx;
 		int ny = y + i * dy;
 
-		//stoping if getting outside the grid
+		//stoping if getting outside the grid (memory safety)
 		if (nx < 0 || nx >= 19 || ny < 0 || ny >= 19)
 			break;
 
@@ -287,4 +287,28 @@ bool Board::_isVulnerable(int x, int y, e_stone stone) const {
 		}
 	}
 	return false; //alignement is not breakable
+}
+
+//return true if the last stone is going to capture at least a pair (for free-three)
+bool Board::willCapture(int x, int y, e_stone stone) const {
+	e_stone opponent = (stone == BLACK) ? WHITE : BLACK;
+	int direction[8][2] = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, 1}, {-1, -1}, {1, -1}, {-1, 1}};
+
+	for (int i = 0; i < 8; ++i) {
+		int dx = direction[i][0];
+		int dy = direction[i][1];
+
+		int nx3 = x + 3 * dx;
+		int ny3 = y + 3 * dy;
+
+		if (nx3 >= 0 && nx3 < 19 && ny3 >= 0 && ny3 < 19) {
+			//searching for opponent-opponent-stone
+			if (this->_grid[y + dy][x + dx] == opponent &&
+				this->_grid[y + 2 * dy][x + 2 * dx] == opponent &&
+				this->_grid[ny3][nx3] == stone) {
+				return true; //is going to capture a pair of the opponent
+			}
+		}
+	}
+	return false; //is not capturing anything
 }

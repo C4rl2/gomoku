@@ -1,6 +1,7 @@
 #include "Game.hpp"
 #include <iostream>
 #include <string>
+#include <limits>
 
 Game::Game() {
 	this->_currentPlayer = BLACK; //black always starts
@@ -57,11 +58,17 @@ void Game::run() {
 			}
 			std::cout << "Entree invalide. Veuillez entrer deux nombres entre 0 et 18." << std::endl;
 			std::cin.clear();
-			std::cin.ignore(10000, '\n'); //ugly arbitrary number, but will disapear when the game's gonna be playable on the web
+			std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 			continue;
 		}
 
-		if (this->_board.isDoubleThree(x, y, this->_currentPlayer)) {
+		if (x < 0 || x >= 19 || y < 0 || y >= 19 || this->_board.getStone(x, y) != EMPTY) {
+			std::cout << "Coup invalide ! La case est deja occupee ou hors limites." << std::endl;
+			continue;
+		}
+
+		if (this->_board.isDoubleThree(x, y, this->_currentPlayer) &&
+			this->_board.willCapture(x, y, this->_currentPlayer) == false) {
 			std::cout << "Coup interdit ! Double trois détecté." << std::endl;
 			continue;
 		}
