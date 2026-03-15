@@ -8,9 +8,6 @@ class Game {
 		Board	_board;
 		e_stone	_currentPlayer;
 
-		int		_capturesBlack;
-		int		_capturesWhite;
-
 		void	_switchPlayer();
 		void	_printTurnInfo() const;
 

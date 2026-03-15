@@ -5,8 +5,6 @@
 
 Game::Game() {
 	this->_currentPlayer = BLACK; //black always starts
-	this->_capturesBlack = 0;
-	this->_capturesWhite = 0;
 }
 
 Game::Game(const Game &other) {
@@ -17,8 +15,6 @@ Game &Game::operator=(const Game &other) {
 	if (this != &other) {
 		this->_board = other._board;
 		this->_currentPlayer = other._currentPlayer;
-		this->_capturesBlack = other._capturesBlack;
-		this->_capturesWhite = other._capturesWhite;
 	}
 	return *this;
 }
@@ -34,7 +30,7 @@ void Game::_switchPlayer() {
 }
 
 void Game::_printTurnInfo() const {
-	std::cout << "Scores Captures - Noir : " << this->_capturesBlack << " | Blanc : " << this->_capturesWhite << std::endl;
+	std::cout << "Scores Captures - Noir : " << this->_board.getCaptures(BLACK) << " | Blanc : " << this->_board.getCaptures(WHITE) << std::endl;
 	std::string playerName = (this->_currentPlayer == BLACK) ? "Noir (X)" : "Blanc (O)";
 	std::cout << "\nTour du joueur " << playerName << "." << std::endl;
 	std::cout << "Entrez les coordonnees X et Y (ex: 9 9) pour poser votre pierre ou CTRL+D pour quitter : ";
@@ -75,14 +71,9 @@ void Game::run() {
 
 		if (this->_board.setStone(x, y, this->_currentPlayer)) {
 			//detecting captures and incremeting scores
-			int captures = this->_board.executeCaptures(x, y, this->_currentPlayer);
-			if (captures > 0) {
-				if (this->_currentPlayer == BLACK)
-					this->_capturesBlack += captures;
-				else
-					this->_capturesWhite += captures;
-			}
+			this->_board.executeCaptures(x, y, this->_currentPlayer);
 
+			//five stones aligned didn't got break
 			e_stone opponent = (this->_currentPlayer == BLACK) ? WHITE : BLACK;
 			if (this->_board.hasFive(opponent)) {
 				std::cout << std::endl;
@@ -97,8 +88,8 @@ void Game::run() {
 
 			
 			e_win_state winState = this->_board.checkWin(x, y, this->_currentPlayer);
-			bool winByCapture = (this->_currentPlayer == BLACK && this->_capturesBlack >= 5) ||
-								(this->_currentPlayer == WHITE && this->_capturesWhite >= 5);
+			bool winByCapture = (this->_currentPlayer == BLACK && this->_board.getCaptures(BLACK) >= 5) ||
+								(this->_currentPlayer == WHITE && this->_board.getCaptures(WHITE) >= 5);
 
 			if (winState == WIN || winByCapture) {
 				std::cout << std::endl;

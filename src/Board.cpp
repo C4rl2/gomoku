@@ -1,6 +1,6 @@
 #include "Board.hpp"
 
-Board::Board() {
+Board::Board() : _capturesBlack(0), _capturesWhite(0) {
 	for (int y = 0; y < 19; ++y) {
 		for (int x = 0; x < 19; ++x) {
 			this->_grid[y][x] = EMPTY;
@@ -14,6 +14,8 @@ Board::Board(const Board &other) {
 
 Board &Board::operator=(const Board &other) {
 	if (this != &other) {
+		this->_capturesBlack = other._capturesBlack;
+		this->_capturesWhite = other._capturesWhite;
 		for (int y = 0; y < 19; ++y) {
 			for (int x = 0; x < 19; ++x) {
 				this ->_grid[y][x] = other._grid[y][x];
@@ -41,6 +43,14 @@ bool Board::setStone(int x, int y, e_stone stone) {
 		}
 	}
 	return false; //invalid placement
+}
+
+int Board::getCaptures(e_stone stone) const {
+	if (stone == BLACK)
+		return this->_capturesBlack;
+	if (stone == WHITE)
+		return this->_capturesWhite;
+	return 0;
 }
 
 void Board::printBoard() const {
@@ -254,6 +264,14 @@ int	Board::executeCaptures(int x, int y, e_stone stone) {
 				}
 		}
 	}
+
+	if (capturedPairs > 0) {
+		if (stone == BLACK)
+			this->_capturesBlack += capturedPairs;
+		else
+			this->_capturesWhite += capturedPairs;
+	}
+
 	return capturedPairs;
 }
 

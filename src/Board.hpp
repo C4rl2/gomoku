@@ -19,6 +19,8 @@ enum e_win_state {
 class Board {
 	private:
 		e_stone _grid[19][19];
+		int		_capturesBlack;
+		int		_capturesWhite;
 
 		int		_countDirection(int x, int y, int dx, int dy, e_stone stone) const;
 		bool	_isVulnerable(int x, int y, e_stone stone) const;
@@ -33,6 +35,7 @@ class Board {
 
 		e_stone			getStone(int x, int y) const;
 		bool			setStone(int x, int y, e_stone stone);
+		int				getCaptures(e_stone stone) const;
 
 		void			printBoard() const;
 
