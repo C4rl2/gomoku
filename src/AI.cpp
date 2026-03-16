@@ -20,6 +20,7 @@ AI &AI::operator=(const AI &other) {
 
 AI::~AI() {}
 
+//return coordinates of the best possible move
 Move AI::getBestMove(const Board &board) {
 	(void)board;
 
@@ -56,6 +57,7 @@ int AI::_evaluateLine(int count, int openEnds, bool isAi) const {
 	return isAi ? score : -score; //-score if its the opponent (humain) alignements
 }
 
+//heuristic, give score to the actual board
 int AI::_evaluateBoard(const Board &board) const {
 	int totalScore = 0;
 	int directions[4][2] = {{1, 0}, {0, 1}, {1, 1}, {-1, 1}};
@@ -119,4 +121,54 @@ int AI::_evaluateBoard(const Board &board) const {
 	totalScore -= (board.getCaptures(this->_opponentTeam) * 2000);
 
 	return totalScore;
+}
+
+//checks if an empty cell has neighbor at a given distance
+bool	AI::_hasNeighbor(const Board &board, int x, int y, int distance) const {
+	for (int dy = -distance; dy <= distance; ++dy) {
+		for (int dx = -distance; dx <= distance; ++dx) {
+			if (dx == 0 && dy == 0)
+				continue; //stone itself
+
+			int nx = x + dx;
+			int ny = y + dy;
+
+			if (nx >= 0 && nx < 19 && ny >= 0 && ny < 19 ) {
+				if (board.getStone(nx, ny) != EMPTY) {
+					return true; // found a neighbor
+				}
+			}
+		}
+	}
+	return false; //cell has absolutely no neighbor stones all around
+}
+
+//scan the board and return list of moves (within all stones neighbors)
+std::vector<Move>	AI::_generateMoves(const Board &board) const {
+	std::vector<Move> moves;
+	bool isEmptyBoard = true;
+
+	for (int y = 0; y < 19; ++y) {
+		for (int x = 0; x < 19; ++x) {
+			if (board.getStone(x, y) != EMPTY) {
+				isEmptyBoard = false;
+			} else {
+				if (this->_hasNeighbor(board, x, y, 2)) {
+					Move m;
+					m.x = x;
+					m.y = y;
+					moves.push_back(m);
+				}
+			}
+		}
+	}
+
+	//if AI is playing the first move on the board
+	if (isEmptyBoard) {
+		Move m;
+		m.x = 9;
+		m.y = 9;
+		moves.push_back(m);
+	}
+	return moves;
 }
