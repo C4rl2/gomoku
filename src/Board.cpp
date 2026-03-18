@@ -289,7 +289,7 @@ bool Board::_isVulnerable(int x, int y, e_stone stone) const {
 		int nx_minus1 = x - dx;
 		int ny_minus1 = y - dy; //back (should be opponent)
 		int nx_plus1 = x + dx;
-		int ny_plus1 = y + dy; // front (should be stone)
+		int ny_plus1 = y + dy; //front (should be stone)
 		int nx_plus2 = x + 2 * dx;
 		int ny_plus2 = y + 2 * dy; //2 grid in front (should be empty)
 

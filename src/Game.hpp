@@ -2,10 +2,12 @@
 # define GAME_HPP
 
 # include "Board.hpp"
+# include "AI.hpp"
 
 class Game {
 	private:
 		Board	_board;
+		AI		_ai;
 		e_stone	_currentPlayer;
 
 		void	_switchPlayer();

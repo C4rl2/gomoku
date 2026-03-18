@@ -19,6 +19,7 @@ class AI {
 		int     _evaluateLine(int count, int openEnds, bool isAi) const;
 		bool	_hasNeighbor(const Board &board, int x, int y, int distance) const;
 		std::vector<Move>	_generateMoves(const Board &board) const;
+		int		_minimax(Board board, int depth, int alpha, int beta, bool isMaximizing);
 
 	public:
 		AI();

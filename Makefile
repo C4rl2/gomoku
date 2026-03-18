@@ -22,7 +22,8 @@ OBJS_DIR    = objs
 
 SRCS_FILES  = main.cpp \
               Board.cpp \
-			  Game.cpp
+			  Game.cpp \
+			  AI.cpp
 
 SRCS        = $(addprefix $(SRCS_DIR)/, $(SRCS_FILES))
 OBJS        = $(addprefix $(OBJS_DIR)/, $(SRCS_FILES:.cpp=.o))

@@ -2,8 +2,9 @@
 #include <iostream>
 #include <string>
 #include <limits>
+#include <ctime>
 
-Game::Game() {
+Game::Game() : _ai(WHITE) {
 	this->_currentPlayer = BLACK; //black always starts
 }
 
@@ -15,6 +16,7 @@ Game &Game::operator=(const Game &other) {
 	if (this != &other) {
 		this->_board = other._board;
 		this->_currentPlayer = other._currentPlayer;
+		this->_ai = other._ai;
 	}
 	return *this;
 }
@@ -47,26 +49,48 @@ void Game::run() {
 		this->_board.printBoard();
 		this->_printTurnInfo();
 		
-		if (!(std::cin >> x >> y)) {
-			if (std::cin.eof()) {
-				std::cout << "\nArret du programe." << std::endl;
+		if (this->_currentPlayer == BLACK) {
+			if (!(std::cin >> x >> y)) {
+				if (std::cin.eof()) {
+					std::cout << "\nArret du programe." << std::endl;
+					break;
+				}
+				std::cout << "Entree invalide. Veuillez entrer deux nombres entre 0 et 18." << std::endl;
+				std::cin.clear();
+				std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+				continue;
+			}
+
+			if (x < 0 || x >= 19 || y < 0 || y >= 19 || this->_board.getStone(x, y) != EMPTY) {
+				std::cout << "Coup invalide ! La case est deja occupee ou hors limites." << std::endl;
+				continue;
+			}
+
+			if (this->_board.isDoubleThree(x, y, this->_currentPlayer) &&
+				this->_board.willCapture(x, y, this->_currentPlayer) == false) {
+				std::cout << "Coup interdit ! Double trois détecté." << std::endl;
+				continue;
+			}
+
+		} else {
+			std::cout << "L'IA réfléchit..." << std::endl;
+			clock_t start_time = clock(); //starting timer
+			Move aiMove = this->_ai.getBestMove(this->_board);
+			x = aiMove.x;
+			y = aiMove.y; //ai move got calculated
+			
+			if (x == -1 && y == -1) {
+				std::cout << "\n======================================" << std::endl;
+				std::cout << " MATCH NUL ! Le plateau est complet. " << std::endl;
+				std::cout << "======================================" << std::endl;
 				break;
 			}
-			std::cout << "Entree invalide. Veuillez entrer deux nombres entre 0 et 18." << std::endl;
-			std::cin.clear();
-			std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-			continue;
-		}
-
-		if (x < 0 || x >= 19 || y < 0 || y >= 19 || this->_board.getStone(x, y) != EMPTY) {
-			std::cout << "Coup invalide ! La case est deja occupee ou hors limites." << std::endl;
-			continue;
-		}
-
-		if (this->_board.isDoubleThree(x, y, this->_currentPlayer) &&
-			this->_board.willCapture(x, y, this->_currentPlayer) == false) {
-			std::cout << "Coup interdit ! Double trois détecté." << std::endl;
-			continue;
+			
+			clock_t end_time = clock(); //stoppped the timer
+			
+			double time_spent = (double)(end_time - start_time) / CLOCKS_PER_SEC;
+			std::cout << ">> Coup joué par l'IA : " << x << " " << y << std::endl;
+			std::cout << ">> Temps de calcul : " << time_spent << " secondes." << std::endl;
 		}
 
 		if (this->_board.setStone(x, y, this->_currentPlayer)) {
