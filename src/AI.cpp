@@ -20,6 +20,10 @@ AI &AI::operator=(const AI &other) {
 
 AI::~AI() {}
 
+static bool compareMoves(const Move &a, const Move &b) {
+	return a.score > b.score ;
+}
+
 //returns a score depending on what the line contains
 int AI::_evaluateLine(int count, int openEnds, bool isAi) const {
 	int score = 0;
@@ -144,6 +148,7 @@ std::vector<Move>	AI::_generateMoves(const Board &board) const {
 					Move m;
 					m.x = x;
 					m.y = y;
+					m.score = this->_evaluateMoveScore(board, x, y);
 					moves.push_back(m);
 				}
 			}
@@ -157,6 +162,12 @@ std::vector<Move>	AI::_generateMoves(const Board &board) const {
 		m.y = 9;
 		moves.push_back(m);
 	}
+
+	std::sort(moves.begin(), moves.end(), compareMoves); //best to worse move in the list for minimax to get faster
+
+	if (moves.size() > 15)
+		moves.resize(15); //beam search, only keeping best moves possible
+
 	return moves;
 }
 
@@ -241,7 +252,7 @@ Move AI::getBestMove(const Board &board) {
 	int bestScore = -2000000;
 	int alpha = -2000000;
 	int beta = 2000000;
-	int depth = 3; //should be 10, but is 3 for now, so my computer doesn't crash
+	int depth = 6; //should be 10, but is 3 for now, so my computer doesn't crash
 
 	for (size_t i = 0; i < moves.size(); ++i) {
 		Board nextBoard = board;
@@ -261,3 +272,76 @@ Move AI::getBestMove(const Board &board) {
 
 	return bestMove;
 }
+
+//getting a move score for ranking moves before passing them to minimax, for a faster AI player
+int AI::_evaluateMoveScore(const Board &board, int x, int y) const {
+	int score = 0;
+
+	//winning the game by alignement
+	if (board.checkWin(x, y, this->_aiTeam) == WIN)
+		return 10000000; 
+
+	//5th capture (winning too)
+	if (board.willCapture(x, y, this->_aiTeam) && board.getCaptures(this->_aiTeam) >= 4)
+		return 10000000;
+
+	//if opponenent was getting a 5th alignement (win)
+	if (board.checkWin(x, y, this->_opponentTeam) == WIN)
+		score += 5000000; //urgent
+
+	//if opponenent was getting a 5th capture (win)
+	if (board.willCapture(x, y, this->_opponentTeam) && board.getCaptures(this->_opponentTeam) >= 4)
+		score += 5000000;
+
+	//capturing or blocking a capture
+	if (board.willCapture(x, y, this->_aiTeam))
+		score += 10000;
+	if (board.willCapture(x, y, this->_opponentTeam))
+		score += 9000;
+
+	//alignements and threats
+	//scanning 4 axes
+	int directions[4][2] = {{1, 0}, {0, 1}, {1, 1}, {1, -1}};
+
+	for (int d = 0; d < 4; ++d) {
+		int dx = directions[d][0];
+		int dy = directions[d][1];
+
+		int aiStones = 0;
+		int oppStones = 0;
+
+		//both directions of an axe
+		for (int dir = -1; dir <= 1; dir += 2) { 
+			//3 spaces further
+			for (int step = 1; step <= 3; ++step) {
+				int nx = x + (dx * dir * step);
+				int ny = y + (dy * dir * step);
+                
+				if (nx >= 0 && nx < 19 && ny >= 0 && ny < 19) {
+					e_stone s = board.getStone(nx, ny);
+					if (s == this->_aiTeam) {
+						aiStones++;
+						score += (100 / step); //bigger bonus if closer stone
+					} else if (s == this->_opponentTeam) {
+						oppStones++;
+						score += (80 / step); //getting less by blocking than attacking
+					} else {
+						break; //empty space so no more alignement
+					}
+				} else {
+					break; //getting out of the board
+				}
+			}
+		}
+
+		//bonus for blocking or creating big alignements
+		if (aiStones >= 3) score += 5000; //4 stones aligned
+		else if (aiStones == 2) score += 1000; //3 stones aligned
+
+		if (oppStones >= 3) score += 4500; //blocking 4 stones alignement
+		else if (oppStones == 2) score += 800; //blocking 3 stones alignement
+	}
+
+	return score;
+}
+

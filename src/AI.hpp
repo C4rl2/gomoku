@@ -2,12 +2,14 @@
 # define AI_HPP
 
 # include "Board.hpp"
-# include <limits> //alpha-beta
+# include <limits>
 # include <vector>
+# include <algorithm>
 
 struct Move {
 	int x;
 	int y;
+	int score;
 };
 
 class AI {
@@ -20,6 +22,7 @@ class AI {
 		bool	_hasNeighbor(const Board &board, int x, int y, int distance) const;
 		std::vector<Move>	_generateMoves(const Board &board) const;
 		int		_minimax(Board board, int depth, int alpha, int beta, bool isMaximizing);
+		int		_evaluateMoveScore(const Board &board, int x, int y) const;
 
 	public:
 		AI();
