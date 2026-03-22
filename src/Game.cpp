@@ -3,6 +3,7 @@
 #include <string>
 #include <limits>
 #include <ctime>
+#include <iomanip>
 
 Game::Game() : _ai(WHITE) {
 	this->_currentPlayer = BLACK; //black always starts
@@ -43,6 +44,21 @@ void Game::run() {
 	int x, y;
 
 	std::cout << "=== Gomoku (Mode Terminal) ===" << std::endl;
+
+	int chosenDepth = 0;
+	std::cout << "\nChoisissez la difficulté du joueur IA (profondeur de recherche) : " << std::endl;
+	std::cout << "Entrez votre choix (1 à 10) : ";
+	while (!(std::cin >> chosenDepth) || chosenDepth < 1 || chosenDepth > 10) {
+		if (std::cin.eof()) {
+			std::cout << "Arret du programme." << std::endl;
+			return ;
+		}
+		std::cout << "Entrée invalide. Veuillez entrer un nombre entre 1 et 10 : ";
+		std::cin.clear();
+		std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+	}
+	this->_ai.setDepth(chosenDepth);
+	std::cout << "Difficultée reglée sur la profondeur " << this->_ai.getDepth() << ".\n" << std::endl;
 
 	while (true) {
 		std::cout << std::endl;
@@ -85,12 +101,14 @@ void Game::run() {
 				std::cout << "======================================" << std::endl;
 				break;
 			}
-			
+
 			clock_t end_time = clock(); //stoppped the timer
 			
 			double time_spent = (double)(end_time - start_time) / CLOCKS_PER_SEC;
 			std::cout << ">> Coup joué par l'IA : " << x << " " << y << std::endl;
-			std::cout << ">> Temps de calcul : " << time_spent << " secondes." << std::endl;
+			std::cout << ">> Temps de calcul : " << std::fixed << std::setprecision(6) << time_spent << " secondes." << std::endl;
+			std::cout.unsetf(std::ios_base::floatfield); //remove the precision for secondes
+			std::cout << "Profondeur : " << this->_ai.getDepth() << std::endl;
 		}
 
 		if (this->_board.setStone(x, y, this->_currentPlayer)) {

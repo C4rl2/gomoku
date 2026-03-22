@@ -1,8 +1,8 @@
 #include "AI.hpp"
 
-AI::AI() : _aiTeam(WHITE), _opponentTeam(BLACK) {}
+AI::AI() : _aiTeam(WHITE), _opponentTeam(BLACK), _depth(5) {}
 
-AI::AI(e_stone aiTeam) : _aiTeam(aiTeam) {
+AI::AI(e_stone aiTeam) : _aiTeam(aiTeam), _depth(5) {
 	this->_opponentTeam = (aiTeam == BLACK) ? WHITE : BLACK;
 }
 
@@ -14,11 +14,20 @@ AI &AI::operator=(const AI &other) {
 	if (this != &other) {
 		this->_aiTeam = other._aiTeam;
 		this->_opponentTeam = other._opponentTeam;
+		this->_depth = other._depth;
 	}
 	return *this;
 }
 
 AI::~AI() {}
+
+void AI::setDepth(int depth) {
+	this->_depth = depth;
+}
+
+int AI::getDepth() const {
+	return this->_depth;
+}
 
 static bool compareMoves(const Move &a, const Move &b) {
 	return a.score > b.score ;
@@ -232,6 +241,28 @@ int AI::_minimax(Board board, int depth, int alpha, int beta, bool isMaximizing)
 
 //return coordinates of the best possible move
 Move AI::getBestMove(const Board &board) {
+	//hardcoding opening book
+	int stoneCount = 0;
+	int hx = -1, hy = -1;
+	for (int y = 0; y < 19; ++y) {
+		for (int x = 0; x < 19; ++x) {
+			if (board.getStone(x, y) != EMPTY) {
+				stoneCount++;
+				hx = x;
+				hy = y;
+			}
+		}
+	}
+	//if humain played the first move of the game
+	if (stoneCount == 1) {
+		Move m;
+		//playing diag towards center, or towards the outside if already center
+		m.x = (hx <= 9) ? hx + 1 : hx - 1;
+		m.y = (hy <= 9) ? hy + 1 : hy - 1;
+		return m;
+	}
+
+
 	std::vector<Move> moves = this->_generateMoves(board);
 	
 	if (moves.empty()) {
@@ -252,7 +283,6 @@ Move AI::getBestMove(const Board &board) {
 	int bestScore = -2000000;
 	int alpha = -2000000;
 	int beta = 2000000;
-	int depth = 6; //should be 10, but is 3 for now, so my computer doesn't crash
 
 	for (size_t i = 0; i < moves.size(); ++i) {
 		Board nextBoard = board;
@@ -260,7 +290,7 @@ Move AI::getBestMove(const Board &board) {
 		nextBoard.executeCaptures(moves[i].x, moves[i].y, this->_aiTeam);
 
 		//launching minimax with next move being the humain one
-		int score = this->_minimax(nextBoard, depth - 1, alpha, beta, false);
+		int score = this->_minimax(nextBoard, this->_depth - 1, alpha, beta, false);
 
 		if (score > bestScore) {
 			bestScore = score;

@@ -16,6 +16,7 @@ class AI {
 	private:
 		e_stone _aiTeam;
 		e_stone _opponentTeam;
+		int		_depth;
 
 		int     _evaluateBoard(const Board &board) const;
 		int     _evaluateLine(int count, int openEnds, bool isAi) const;
@@ -31,6 +32,8 @@ class AI {
 		AI &operator=(const AI &other);
 		~AI();
 
+		void	setDepth(int depth);
+		int		getDepth() const;
 		Move	getBestMove(const Board &board);
 };
 
