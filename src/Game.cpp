@@ -1,13 +1,7 @@
 #include "Game.hpp"
-#include <iostream>
-#include <string>
-#include <limits>
 #include <ctime>
-#include <iomanip>
 
-Game::Game() : _ai(WHITE) {
-	this->_currentPlayer = BLACK; //black always starts
-}
+Game::Game() : _ai(WHITE), _currentPlayer(BLACK), _gameOver(false), _winner(0) {}
 
 Game::Game(const Game &other) {
 	*this = other;
@@ -15,9 +9,11 @@ Game::Game(const Game &other) {
 
 Game &Game::operator=(const Game &other) {
 	if (this != &other) {
-		this->_board = other._board;
+		this->_board         = other._board;
+		this->_ai            = other._ai;
 		this->_currentPlayer = other._currentPlayer;
-		this->_ai = other._ai;
+		this->_gameOver      = other._gameOver;
+		this->_winner        = other._winner;
 	}
 	return *this;
 }
@@ -25,129 +21,109 @@ Game &Game::operator=(const Game &other) {
 Game::~Game() {}
 
 void Game::_switchPlayer() {
-	if (this->_currentPlayer == BLACK) {
+	if (this->_currentPlayer == BLACK)
 		this->_currentPlayer = WHITE;
-	} else {
+	else
 		this->_currentPlayer = BLACK;
-	}
 }
 
-void Game::_printTurnInfo() const {
-	std::cout << "Scores Captures - Noir : " << this->_board.getCaptures(BLACK) << " | Blanc : " << this->_board.getCaptures(WHITE) << std::endl;
-	std::string playerName = (this->_currentPlayer == BLACK) ? "Noir (X)" : "Blanc (O)";
-	std::cout << "\nTour du joueur " << playerName << "." << std::endl;
-	std::cout << "Entrez les coordonnees X et Y (ex: 9 9) pour poser votre pierre ou CTRL+D pour quitter : ";
+// Replaces the depth prompt loop from run().
+void Game::init(int depth) {
+	this->_board         = Board();
+	this->_ai            = AI(WHITE);
+	this->_ai.setDepth(depth);
+	this->_currentPlayer = BLACK;
+	this->_gameOver      = false;
+	this->_winner        = 0;
 }
 
-//start the game logic
-void Game::run() {
-	int x, y;
+// Extracted from the setStone block inside run()'s while loop.
+// Shared by placeStone() and aiPlay() to avoid duplication.
+int Game::_applyMove(int x, int y) {
+	if (!this->_board.setStone(x, y, this->_currentPlayer))
+		return -1;
 
-	std::cout << "=== Gomoku (Mode Terminal) ===" << std::endl;
+	this->_board.executeCaptures(x, y, this->_currentPlayer);
 
-	int chosenDepth = 0;
-	std::cout << "\nChoisissez la difficulté du joueur IA (profondeur de recherche) : " << std::endl;
-	std::cout << "Entrez votre choix (1 à 10) : ";
-	while (!(std::cin >> chosenDepth) || chosenDepth < 1 || chosenDepth > 10) {
-		if (std::cin.eof()) {
-			std::cout << "Arret du programme." << std::endl;
-			return ;
-		}
-		std::cout << "Entrée invalide. Veuillez entrer un nombre entre 1 et 10 : ";
-		std::cin.clear();
-		std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+	// Check if the opponent's existing five-in-a-row survived the captures.
+	e_stone opponent = (this->_currentPlayer == BLACK) ? WHITE : BLACK;
+	if (this->_board.hasFive(opponent)) {
+		this->_gameOver = true;
+		this->_winner   = (int)opponent;
+		return 0;
 	}
-	this->_ai.setDepth(chosenDepth);
-	std::cout << "Difficultée reglée sur la profondeur " << this->_ai.getDepth() << ".\n" << std::endl;
 
-	while (true) {
-		std::cout << std::endl;
-		this->_board.printBoard();
-		this->_printTurnInfo();
-		
-		if (this->_currentPlayer == BLACK) {
-			if (!(std::cin >> x >> y)) {
-				if (std::cin.eof()) {
-					std::cout << "\nArret du programe." << std::endl;
-					break;
-				}
-				std::cout << "Entree invalide. Veuillez entrer deux nombres entre 0 et 18." << std::endl;
-				std::cin.clear();
-				std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-				continue;
-			}
+	e_win_state winState     = this->_board.checkWin(x, y, this->_currentPlayer);
+	bool        winByCapture = (this->_board.getCaptures(this->_currentPlayer) >= 5);
 
-			if (x < 0 || x >= 19 || y < 0 || y >= 19 || this->_board.getStone(x, y) != EMPTY) {
-				std::cout << "Coup invalide ! La case est deja occupee ou hors limites." << std::endl;
-				continue;
-			}
-
-			if (this->_board.isDoubleThree(x, y, this->_currentPlayer) &&
-				this->_board.willCapture(x, y, this->_currentPlayer) == false) {
-				std::cout << "Coup interdit ! Double trois détecté." << std::endl;
-				continue;
-			}
-
-		} else {
-			std::cout << "L'IA réfléchit..." << std::endl;
-			clock_t start_time = clock(); //starting timer
-			Move aiMove = this->_ai.getBestMove(this->_board);
-			x = aiMove.x;
-			y = aiMove.y; //ai move got calculated
-			
-			if (x == -1 && y == -1) {
-				std::cout << "\n======================================" << std::endl;
-				std::cout << " MATCH NUL ! Le plateau est complet. " << std::endl;
-				std::cout << "======================================" << std::endl;
-				break;
-			}
-
-			clock_t end_time = clock(); //stoppped the timer
-			
-			double time_spent = (double)(end_time - start_time) / CLOCKS_PER_SEC;
-			std::cout << ">> Coup joué par l'IA : " << x << " " << y << std::endl;
-			std::cout << ">> Temps de calcul : " << std::fixed << std::setprecision(6) << time_spent << " secondes." << std::endl;
-			std::cout.unsetf(std::ios_base::floatfield); //remove the precision for secondes
-			std::cout << "Profondeur : " << this->_ai.getDepth() << std::endl;
-		}
-
-		if (this->_board.setStone(x, y, this->_currentPlayer)) {
-			//detecting captures and incremeting scores
-			this->_board.executeCaptures(x, y, this->_currentPlayer);
-
-			//five stones aligned didn't got break
-			e_stone opponent = (this->_currentPlayer == BLACK) ? WHITE : BLACK;
-			if (this->_board.hasFive(opponent)) {
-				std::cout << std::endl;
-				this->_board.printBoard();
-				std::string winnerName = (opponent == BLACK) ? "Noir (X)" : "Blanc (O)";
-				std::cout << "\n======================================" << std::endl;
-				std::cout << "  VICTOIRE DU JOUEUR " << winnerName << " !  " << std::endl;
-				std::cout << "  (L'adversaire n'a pas cassé l'alignement)" << std::endl;
-				std::cout << "======================================" << std::endl;
-				break;
-			}
-
-			
-			e_win_state winState = this->_board.checkWin(x, y, this->_currentPlayer);
-			bool winByCapture = (this->_currentPlayer == BLACK && this->_board.getCaptures(BLACK) >= 5) ||
-								(this->_currentPlayer == WHITE && this->_board.getCaptures(WHITE) >= 5);
-
-			if (winState == WIN || winByCapture) {
-				std::cout << std::endl;
-				this->_board.printBoard();
-				std::string winnerName = (this->_currentPlayer == BLACK) ? "Noir (X)" : "Blanc (O)";
-				std::cout << "\n======================================" << std::endl;
-				std::cout << " GAGNANT : " << winnerName << " !  " << std::endl;
-				std::cout << "======================================" << std::endl;
-				break;
-			} else if (winState == BREAKABLE_FIVE) {
-				std::cout << "\n[!] ALERTE : Alignement de 5 cassable crée !" << std::endl;
-			}
-
-			this->_switchPlayer();
-		} else {
-			std::cout << "Coup invalide ! La case est deja occupee ou hors limites." << std::endl;
-		}
+	if (winState == WIN || winByCapture) {
+		this->_gameOver = true;
+		this->_winner   = (int)this->_currentPlayer;
+		return 0;
 	}
+
+	this->_switchPlayer();
+	if (winState == BREAKABLE_FIVE)
+		return 2; // game continues, opponent can still break the alignment
+	return 0;
+}
+
+// Replaces the human input validation block from run().
+int Game::placeStone(int x, int y) {
+	if (this->_gameOver)
+		return -3;
+	if (x < 0 || x >= 19 || y < 0 || y >= 19 || this->_board.getStone(x, y) != EMPTY)
+		return -1;
+	if (this->_board.isDoubleThree(x, y, this->_currentPlayer) &&
+		this->_board.willCapture(x, y, this->_currentPlayer) == false)
+		return -2;
+
+	return this->_applyMove(x, y);
+}
+
+// Replaces the AI block from run(). timeSpent is displayed by the frontend
+// (the subject requires showing the AI computation time).
+int Game::aiPlay(double &timeSpent) {
+	if (this->_gameOver)
+		return -3;
+
+	clock_t start  = clock();
+	Move    aiMove = this->_ai.getBestMove(this->_board);
+	clock_t end    = clock();
+	timeSpent = (double)(end - start) / CLOCKS_PER_SEC;
+
+	if (aiMove.x == -1 && aiMove.y == -1) {
+		this->_gameOver = true;
+		this->_winner   = 3;
+		return -1;
+	}
+
+	return this->_applyMove(aiMove.x, aiMove.y);
+}
+
+// Serializes the grid to a flat array for the JS canvas renderer.
+void Game::getBoard(int *out) const {
+	for (int y = 0; y < 19; ++y)
+		for (int x = 0; x < 19; ++x)
+			out[y * 19 + x] = (int)this->_board.getStone(x, y);
+}
+
+int Game::getCurrentPlayer() const {
+	return (int)this->_currentPlayer;
+}
+
+int Game::getCaptures(int player) const {
+	return this->_board.getCaptures((e_stone)player);
+}
+
+bool Game::isGameOver() const {
+	return this->_gameOver;
+}
+
+int Game::getWinner() const {
+	return this->_winner;
+}
+
+int Game::getDepth() const {
+	return this->_ai.getDepth();
 }
