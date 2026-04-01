@@ -7,7 +7,15 @@
 .vscode/
 .idea/
 *.swp
+CLAUDE.md
 
 #C++
 objs/
-gomoku
+.docker-stamp
+Gomoku
+web/gomoku.js
+web/gomoku.wasm
+
+
+#Subject
+*.pdf
