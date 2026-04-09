@@ -1,5 +1,25 @@
 var aiThinking = false;
 
+document.addEventListener('DOMContentLoaded', function() {
+  var themeToggle = document.getElementById('theme-toggle');
+
+  if (!themeToggle) {
+    return;
+  }
+
+  themeToggle.addEventListener('change', function(e) {
+    if (e.target.checked) {
+      document.documentElement.setAttribute('data-theme', 'light');
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+    }
+    
+    if (document.getElementById('board') && document.getElementById('game').style.display !== 'none' && Bridge.getBoard) {
+      Render.board(Bridge.getBoard());
+    }
+  });
+});
+
 Bridge.load(function() {
   document.getElementById('start-btn').disabled = false;
 });
@@ -8,6 +28,7 @@ function startGame() {
   var depth = Math.max(1, Math.min(10, parseInt(document.getElementById('depth').value) || 5));
   Bridge.gameInit(depth);
 
+  document.getElementById('content').style.display = 'none';
   document.getElementById('setup').style.display = 'none';
   document.getElementById('game').style.display  = '';
 
