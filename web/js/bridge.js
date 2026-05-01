@@ -14,6 +14,7 @@ var Bridge = (function() {
   function placeStone(x, y)    { return G.ccall('place_stone', 'number', ['number', 'number'], [x, y]); }
   function aiPlay()            { return G.ccall('ai_play', 'number', [], []); }
   function getLastAiTime()     { return G.ccall('get_last_ai_time', 'number', [], []); }
+  function getLastDepth()      { return G.ccall('get_last_depth', 'number', [], []); }
   function getCurrentPlayer()  { return G.ccall('get_current_player', 'number', [], []); }
   function getCaptures(player) { return G.ccall('get_captures', 'number', ['number'], [player]); }
   function isGameOver()        { return G.ccall('is_game_over', 'number', [], []) === 1; }
@@ -30,6 +31,7 @@ var Bridge = (function() {
     placeStone:       placeStone,
     aiPlay:           aiPlay,
     getLastAiTime:    getLastAiTime,
+    getLastDepth:     getLastDepth,
     getBoard:         getBoard,
     getCurrentPlayer: getCurrentPlayer,
     getCaptures:      getCaptures,

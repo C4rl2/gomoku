@@ -46,7 +46,8 @@ function runAi() {
 
   Render.board(Bridge.getBoard());
   updateCaptures();
-  document.getElementById('ai-time').textContent = 'AI time: ' + t.toFixed(3) + 's';
+  document.getElementById('ai-time').textContent  = 'AI time: ' + t.toFixed(3) + 's';
+  document.getElementById('ai-depth').textContent = 'AI depth reached: ' + Bridge.getLastDepth();
 
   if (result === -1) { setStatus('Draw — board full'); return; }
   if (checkGameOver()) return;

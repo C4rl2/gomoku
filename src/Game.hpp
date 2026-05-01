@@ -38,6 +38,7 @@ class Game {
 		bool	isGameOver() const;
 		int		getWinner() const;
 		int		getDepth() const;
+		int		getLastDepth() const;
 };
 
 #endif

@@ -20,6 +20,7 @@ extern "C" {
 	EMSCRIPTEN_KEEPALIVE int	get_captures(int player)  { return g_game.getCaptures(player); }
 	EMSCRIPTEN_KEEPALIVE int	is_game_over()            { return g_game.isGameOver() ? 1 : 0; }
 	EMSCRIPTEN_KEEPALIVE int	get_winner()              { return g_game.getWinner(); }
+	EMSCRIPTEN_KEEPALIVE int	get_last_depth()          { return g_game.getLastDepth(); }
 }
 
 int main() { return 0; }

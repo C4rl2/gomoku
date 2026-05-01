@@ -6,6 +6,10 @@
 # include <vector>
 # include <algorithm>
 
+# ifdef __EMSCRIPTEN__
+#  include <emscripten/emscripten.h>
+# endif
+
 struct Move {
 	int x;
 	int y;
@@ -27,10 +31,11 @@ struct TTEntry {
 	e_tt_flag			flag;  //exact / lower / upper bound
 };
 
-# define TT_SIZE     1048576 //1M entries (must be a power of 2)
-# define TT_MASK     (TT_SIZE - 1)
-# define ZOBRIST_AI  0 //index for ai stone in zobrist table
-# define ZOBRIST_OPP 1 //index for opponent stone in zobrist table
+# define TT_SIZE        1048576 //1M entries (must be a power of 2)
+# define TT_MASK        (TT_SIZE - 1)
+# define ZOBRIST_AI     0 //index for ai stone in zobrist table
+# define ZOBRIST_OPP    1 //index for opponent stone in zobrist table
+# define TIME_BUDGET_MS 500 //iterative deepening time budget in milliseconds
 
 class AI {
 	private:
@@ -43,6 +48,11 @@ class AI {
 		//transposition table (heap-allocated, TT_SIZE entries)
 		TTEntry				*_ttable;
 
+		//iterative deepening time tracking
+		double				_startTime;  //time when getBestMove was called (ms)
+		int					_lastDepth;  //depth actually reached in the last getBestMove call
+		bool				_timeUp() const; //returns true if TIME_BUDGET_MS elapsed
+
 		int					_evaluateBoard(const Board &board) const;
 		int					_evaluateLine(int count, int openEnds, bool isAi) const;
 		bool				_hasNeighbor(const Board &board, int x, int y, int distance) const;
@@ -54,6 +64,8 @@ class AI {
 		unsigned long long	_computeHash(const Board &board) const;
 		void				_initZobrist();
 		void				_clearTT();
+		//returns current time in milliseconds (WASM or native)
+		static double		_now();
 
 	public:
 		AI();
@@ -64,6 +76,7 @@ class AI {
 
 		void	setDepth(int depth);
 		int		getDepth() const;
+		int		getLastDepth() const;
 		Move	getBestMove(const Board &board);
 };
 

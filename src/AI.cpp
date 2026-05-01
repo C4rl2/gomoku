@@ -1,5 +1,11 @@
 #include "AI.hpp"
 
+#ifdef __EMSCRIPTEN__
+# include <emscripten/emscripten.h>
+#else
+# include <ctime>
+#endif
+
 static bool compareMoves(const Move &a, const Move &b) {
 	return a.score > b.score ;
 }
@@ -11,21 +17,36 @@ static unsigned long long lcg64(unsigned long long &state) {
 	return state;
 }
 
+//returns current wall-clock time in milliseconds
+//uses emscripten_get_now in WASM (accurate), clock() as fallback on native
+double AI::_now() {
+#ifdef __EMSCRIPTEN__
+	return emscripten_get_now();
+#else
+	return (double)clock() / (CLOCKS_PER_SEC / 1000.0);
+#endif
+}
+
+//returns true if the time budget has been exhausted
+bool AI::_timeUp() const {
+	return (AI::_now() - this->_startTime) >= (double)TIME_BUDGET_MS;
+}
+
 //initialise zobrist table and allocate the transposition table
-AI::AI() : _aiTeam(WHITE), _opponentTeam(BLACK), _depth(5) {
+AI::AI() : _aiTeam(WHITE), _opponentTeam(BLACK), _depth(5), _startTime(0.0), _lastDepth(0) {
 	_ttable = new TTEntry[TT_SIZE];
 	_initZobrist();
 	_clearTT();
 }
 
-AI::AI(e_stone aiTeam) : _aiTeam(aiTeam), _depth(5) {
+AI::AI(e_stone aiTeam) : _aiTeam(aiTeam), _depth(5), _startTime(0.0), _lastDepth(0) {
 	this->_opponentTeam = (aiTeam == BLACK) ? WHITE : BLACK;
 	_ttable = new TTEntry[TT_SIZE];
 	_initZobrist();
 	_clearTT();
 }
 
-AI::AI(const AI &other) : _ttable(NULL) {
+AI::AI(const AI &other) : _ttable(NULL), _startTime(0.0), _lastDepth(0) {
 	*this = other;
 }
 
@@ -34,6 +55,8 @@ AI &AI::operator=(const AI &other) {
 		this->_aiTeam       = other._aiTeam;
 		this->_opponentTeam = other._opponentTeam;
 		this->_depth        = other._depth;
+		this->_startTime    = other._startTime;
+		this->_lastDepth    = other._lastDepth;
 		//copy zobrist table
 		for (int y = 0; y < 19; ++y)
 			for (int x = 0; x < 19; ++x)
@@ -58,6 +81,10 @@ void AI::setDepth(int depth) {
 
 int AI::getDepth() const {
 	return this->_depth;
+}
+
+int AI::getLastDepth() const {
+	return this->_lastDepth;
 }
 
 //fills _zobristTable with deterministic pseudo-random 64-bit values
@@ -245,7 +272,12 @@ std::vector<Move> AI::_generateMoves(const Board &board) const {
 //minimax algo with alpha-beta pruning and zobrist transposition table
 //hash is passed by value and updated incrementally at each recursive level
 //terminal check added after each move so won positions skip useless recursion
+//returns INT_MIN (sentinel) when time budget is exceeded mid-search
 int AI::_minimax(Board board, int depth, int alpha, int beta, bool isMaximizing, unsigned long long hash) {
+	//abort if time budget exceeded — sentinel propagates up to getBestMove
+	if (this->_timeUp())
+		return (isMaximizing ? -2000001 : 2000001);
+
 	//probe transposition table before doing any work
 	unsigned int ttIndex = (unsigned int)(hash & TT_MASK);
 	TTEntry &entry = _ttable[ttIndex];
@@ -296,6 +328,29 @@ int AI::_minimax(Board board, int depth, int alpha, int beta, bool isMaximizing,
 			Board nextBoard = board; //copying the board
 			//playing the simulated move
 			nextBoard.setStone(moves[i].x, moves[i].y, this->_aiTeam);
+
+			//compute hash delta for placed stone before captures
+			unsigned long long nextHash = hash ^ _zobristTable[moves[i].y][moves[i].x][ZOBRIST_AI];
+
+			//execute captures and update hash for each removed stone
+			int captureDirs[8][2] = {{1,0},{-1,0},{0,1},{0,-1},{1,1},{-1,-1},{1,-1},{-1,1}};
+			for (int d = 0; d < 8; ++d) {
+				int dx = captureDirs[d][0];
+				int dy = captureDirs[d][1];
+				int nx3 = moves[i].x + 3 * dx;
+				int ny3 = moves[i].y + 3 * dy;
+				if (nx3 >= 0 && nx3 < 19 && ny3 >= 0 && ny3 < 19) {
+					int ox1 = moves[i].x + dx,  oy1 = moves[i].y + dy;
+					int ox2 = moves[i].x + 2*dx, oy2 = moves[i].y + 2*dy;
+					if (board.getStone(ox1, oy1) == this->_opponentTeam &&
+						board.getStone(ox2, oy2) == this->_opponentTeam &&
+						board.getStone(nx3, ny3) == this->_aiTeam) {
+						//these two opponent stones will be captured: remove from hash
+						nextHash ^= _zobristTable[oy1][ox1][ZOBRIST_OPP];
+						nextHash ^= _zobristTable[oy2][ox2][ZOBRIST_OPP];
+					}
+				}
+			}
 			nextBoard.executeCaptures(moves[i].x, moves[i].y, this->_aiTeam);
 
 			//if AI just won, no need to go deeper
@@ -304,11 +359,12 @@ int AI::_minimax(Board board, int depth, int alpha, int beta, bool isMaximizing,
 				|| winByCapture)
 				return 1000000 + depth; //depth bonus rewards shorter wins
 
-			//incremental hash update: xor in the new stone
-			unsigned long long nextHash = hash ^ _zobristTable[moves[i].y][moves[i].x][ZOBRIST_AI];
-
 			//recursive, getting deeper, with the opponent (humain) move
 			int eval = this->_minimax(nextBoard, depth - 1, alpha, beta, false, nextHash);
+
+			//propagate timeout sentinel without storing to TT
+			if (eval == -2000001 || eval == 2000001)
+				return eval;
 
 			if (eval > bestScore)
 				bestScore = eval;
@@ -324,6 +380,29 @@ int AI::_minimax(Board board, int depth, int alpha, int beta, bool isMaximizing,
 			Board nextBoard = board; //copying the board
 			//playing the simulated move
 			nextBoard.setStone(moves[i].x, moves[i].y, this->_opponentTeam);
+
+			//compute hash delta for placed stone before captures
+			unsigned long long nextHash = hash ^ _zobristTable[moves[i].y][moves[i].x][ZOBRIST_OPP];
+
+			//execute captures and update hash for each removed stone
+			int captureDirs[8][2] = {{1,0},{-1,0},{0,1},{0,-1},{1,1},{-1,-1},{1,-1},{-1,1}};
+			for (int d = 0; d < 8; ++d) {
+				int dx = captureDirs[d][0];
+				int dy = captureDirs[d][1];
+				int nx3 = moves[i].x + 3 * dx;
+				int ny3 = moves[i].y + 3 * dy;
+				if (nx3 >= 0 && nx3 < 19 && ny3 >= 0 && ny3 < 19) {
+					int ox1 = moves[i].x + dx,  oy1 = moves[i].y + dy;
+					int ox2 = moves[i].x + 2*dx, oy2 = moves[i].y + 2*dy;
+					if (board.getStone(ox1, oy1) == this->_aiTeam &&
+						board.getStone(ox2, oy2) == this->_aiTeam &&
+						board.getStone(nx3, ny3) == this->_opponentTeam) {
+						//these two ai stones will be captured: remove from hash
+						nextHash ^= _zobristTable[oy1][ox1][ZOBRIST_AI];
+						nextHash ^= _zobristTable[oy2][ox2][ZOBRIST_AI];
+					}
+				}
+			}
 			nextBoard.executeCaptures(moves[i].x, moves[i].y, this->_opponentTeam);
 
 			//if opponent just won, no need to go deeper
@@ -332,11 +411,12 @@ int AI::_minimax(Board board, int depth, int alpha, int beta, bool isMaximizing,
 				|| winByCapture)
 				return -(1000000 + depth); //depth bonus penalises longer losses
 
-			//incremental hash update: xor in the new stone
-			unsigned long long nextHash = hash ^ _zobristTable[moves[i].y][moves[i].x][ZOBRIST_OPP];
-
 			//recursive, getting deeper, with the opponent (AI) move
 			int eval = this->_minimax(nextBoard, depth - 1, alpha, beta, true, nextHash);
+
+			//propagate timeout sentinel without storing to TT
+			if (eval == -2000001 || eval == 2000001)
+				return eval;
 
 			if (eval < bestScore)
 				bestScore = eval;
@@ -369,10 +449,16 @@ int AI::_minimax(Board board, int depth, int alpha, int beta, bool isMaximizing,
 }
 
 //return coordinates of the best possible move
-//opening book scan breaks early once stoneCount > 1 to avoid full 361-cell scan
-//immediate win in root loop returns without launching minimax
+//uses iterative deepening from depth 1 up to _depth within TIME_BUDGET_MS
+//the TT is preserved across iterations (depth-preferred replacement handles it)
+//the TT is cleared once per real move, not between ID iterations
 Move AI::getBestMove(const Board &board) {
-	//_clearTT();
+	//clear TT at the start of each real move (not between ID iterations)
+	_clearTT();
+	this->_lastDepth = 0;
+
+	//record start time for the budget shared across all ID iterations
+	this->_startTime = AI::_now();
 
 	//hardcoding opening book
 	int stoneCount = 0;
@@ -413,39 +499,98 @@ Move AI::getBestMove(const Board &board) {
 	//compute the root hash once; children update it incrementally
 	unsigned long long rootHash = _computeHash(board);
 
-	Move bestMove;
-	bestMove.x = -1;
-	bestMove.y = -1;
-	bestMove.score = 0;
-
-	int bestScore = -2000000;
-	int alpha = -2000000;
-	int beta  =  2000000;
-
+	//check for immediate wins at root before launching ID
 	for (size_t i = 0; i < moves.size(); ++i) {
 		Board nextBoard = board;
 		nextBoard.setStone(moves[i].x, moves[i].y, this->_aiTeam);
 		nextBoard.executeCaptures(moves[i].x, moves[i].y, this->_aiTeam);
-
-		//if AI wins immediately, no need to search further
 		bool winByCapture = (nextBoard.getCaptures(this->_aiTeam) >= 5);
 		if (nextBoard.checkWin(moves[i].x, moves[i].y, this->_aiTeam) == WIN
 			|| winByCapture)
 			return moves[i];
-
-		//incremental hash for this root child
-		unsigned long long childHash = rootHash ^ _zobristTable[moves[i].y][moves[i].x][ZOBRIST_AI];
-
-		//launching minimax with next move being the humain one
-		int score = this->_minimax(nextBoard, this->_depth - 1, alpha, beta, false, childHash);
-
-		if (score > bestScore) {
-			bestScore = score;
-			bestMove  = moves[i]; //keeping the coordinates of the new move that got more pts
-		}
-		if (score > alpha)
-			alpha = score;
 	}
+
+	//iterative deepening: depth 1 to _depth, stop if time runs out
+	//bestMove is always updated at the end of a fully completed iteration
+	Move bestMove = moves[0]; //fallback: best move from beam ordering (depth 0)
+
+	for (int currentDepth = 1; currentDepth <= this->_depth; ++currentDepth) {
+		//abort this iteration if budget already gone before we start
+		if (this->_timeUp())
+			break;
+
+		Move  iterBest      = moves[0];
+		int   iterBestScore = -2000000;
+		int   alpha         = -2000000;
+		int   beta          =  2000000;
+		bool  aborted       = false;
+
+		for (size_t i = 0; i < moves.size(); ++i) {
+			if (this->_timeUp()) {
+				aborted = true;
+				break;
+			}
+
+			Board nextBoard = board;
+			nextBoard.setStone(moves[i].x, moves[i].y, this->_aiTeam);
+
+			//compute hash delta for placed stone before captures
+			unsigned long long childHash = rootHash ^ _zobristTable[moves[i].y][moves[i].x][ZOBRIST_AI];
+
+			//update hash for captures that will occur
+			int captureDirs[8][2] = {{1,0},{-1,0},{0,1},{0,-1},{1,1},{-1,-1},{1,-1},{-1,1}};
+			for (int d = 0; d < 8; ++d) {
+				int dx = captureDirs[d][0];
+				int dy = captureDirs[d][1];
+				int nx3 = moves[i].x + 3 * dx;
+				int ny3 = moves[i].y + 3 * dy;
+				if (nx3 >= 0 && nx3 < 19 && ny3 >= 0 && ny3 < 19) {
+					int ox1 = moves[i].x + dx,  oy1 = moves[i].y + dy;
+					int ox2 = moves[i].x + 2*dx, oy2 = moves[i].y + 2*dy;
+					if (board.getStone(ox1, oy1) == this->_opponentTeam &&
+						board.getStone(ox2, oy2) == this->_opponentTeam &&
+						board.getStone(nx3, ny3) == this->_aiTeam) {
+						childHash ^= _zobristTable[oy1][ox1][ZOBRIST_OPP];
+						childHash ^= _zobristTable[oy2][ox2][ZOBRIST_OPP];
+					}
+				}
+			}
+			nextBoard.executeCaptures(moves[i].x, moves[i].y, this->_aiTeam);
+
+			//launching minimax with next move being the humain one
+			int score = this->_minimax(nextBoard, currentDepth - 1, alpha, beta, false, childHash);
+
+			//sentinel from _minimax means time ran out mid-search: discard partial result
+			if (score == -2000001 || score == 2000001) {
+				aborted = true;
+				break;
+			}
+
+			if (score > iterBestScore) {
+				iterBestScore = score;
+				iterBest      = moves[i];
+			}
+			if (score > alpha)
+				alpha = score;
+		}
+
+		//only commit this iteration's result if it completed without abort
+		if (!aborted) {
+			bestMove       = iterBest;
+			this->_lastDepth = currentDepth;
+			//re-order moves so next iteration starts from the best candidate
+			//simple: bring iterBest to front if it moved in moves[]
+			for (size_t i = 1; i < moves.size(); ++i) {
+				if (moves[i].x == iterBest.x && moves[i].y == iterBest.y) {
+					Move tmp = moves[0];
+					moves[0] = moves[i];
+					moves[i] = tmp;
+					break;
+				}
+			}
+		}
+	}
+
 	return bestMove;
 }
 

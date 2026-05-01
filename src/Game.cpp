@@ -127,3 +127,7 @@ int Game::getWinner() const {
 int Game::getDepth() const {
 	return this->_ai.getDepth();
 }
+
+int Game::getLastDepth() const {
+	return this->_ai.getLastDepth();
+}
