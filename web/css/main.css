@@ -1,0 +1,199 @@
+:root {
+  --neo-bg: #303446;
+  --neo-text: #c6d0f5;
+  --neo-text-muted: #a5adce;
+  --board-line: #414559;
+
+  --neo-raised-fill: #303446;
+  --neo-raised-highlight: rgba(255, 255, 255, 0.04);
+  --neo-raised-shadow: rgba(0, 0, 0, 0.15);
+  --neo-raised-drop-soft: rgba(0, 0, 0, 0.2);
+  --neo-raised-drop-deep: rgba(0, 0, 0, 0.4);
+
+  --neo-sunken-fill: rgba(0, 0, 0, 0.15);
+  --neo-sunken-hole: rgba(0, 0, 0, 0.3);
+  --neo-sunken-depth: rgba(0, 0, 0, 0.45);
+  --neo-sunken-edge-top: rgba(0, 0, 0, 0.25);
+  --neo-sunken-edge-bottom: rgba(255, 255, 255, 0.05);
+
+  --toggle-night-icon: #babbf1;
+  --toggle-night-icon-muted: #737994;
+  --toggle-day-icon-muted: #838ba7;
+  --toggle-day-icon: #e5c890;
+  --toggle-icon-shadow: rgba(0, 0, 0, 0.28);
+  
+  --stone-p1-bg: linear-gradient(135deg, #8caaee 0%, #85c1dc 100%);
+  --stone-p2-bg: linear-gradient(135deg, #f4b8e4 0%, #eebebe 100%);
+}
+
+html[data-theme='light'] {
+  --neo-bg: #eff1f5;
+  --neo-text: #4c4f69;
+  --neo-text-muted: #6c6f85;
+  --board-line: #ccd0da;
+
+  --neo-raised-fill: #eff1f5;
+  --neo-raised-highlight: #ffffff;
+  --neo-raised-shadow: rgba(114, 135, 253, 0.15);
+  --neo-raised-drop-soft: rgba(114, 135, 253, 0.12);
+  --neo-raised-drop-deep: rgba(114, 135, 253, 0.22);
+
+  --neo-sunken-fill: rgba(204, 208, 218, 0.25);
+  --neo-sunken-hole: rgba(114, 135, 253, 0.1);
+  --neo-sunken-depth: rgba(114, 135, 253, 0.15);
+  --neo-sunken-edge-top: rgba(114, 135, 253, 0.1);
+  --neo-sunken-edge-bottom: #ffffff;
+
+  --stone-p1-bg: linear-gradient(135deg, #1e66f5 0%, #209fb5 100%);
+  --stone-p2-bg: linear-gradient(135deg, #ea76cb 0%, #dd7878 100%);
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--neo-bg);
+  color: var(--neo-text);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  min-height: 100vh;
+  position: relative;
+  transition: background-color 300ms ease-out 0s, color 300ms ease-out 0s;
+}
+
+body:before {
+  content: '';
+  position: absolute;
+  top: 0; right: 0; bottom: 0; left: 0;
+  z-index: -1;
+  background-image: url('data:image/svg+xml,<svg viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg"><filter id="noiseFilter"><feTurbulence type="fractalNoise" baseFrequency="5" numOctaves="2" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(%23noiseFilter)" opacity="0.25"/></svg>');
+  background-repeat: repeat;
+  opacity: 0.15;
+  transition: opacity 300ms ease-out 0s;
+  pointer-events: none;
+}
+html[data-theme='light'] body:before {
+  opacity: 0.25;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  width: 100%;
+  padding: 24px 24px 0;
+  box-sizing: border-box;
+  position: relative;
+  z-index: 10;
+}
+
+#content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 88px);
+  padding: 32px 24px 48px;
+  box-sizing: border-box;
+}
+
+.neo-sunken {
+  background-color: var(--neo-sunken-fill);
+  box-shadow:
+    inset 0 0 0.8em var(--neo-sunken-hole),
+    inset 0 0.5em 0.4em var(--neo-sunken-hole),
+    inset 0 2em 1em var(--neo-sunken-depth),
+    0 -0.25em 0.25em var(--neo-sunken-edge-top),
+    0 0.25em 0.25em var(--neo-sunken-edge-bottom);
+}
+
+.neo-raised {
+  background-color: var(--neo-raised-fill);
+  box-shadow:
+    inset 0 0.25em 0.25em var(--neo-raised-highlight),
+    inset 0 -0.25em 0.25em var(--neo-raised-shadow),
+    0 0.6em 0.4em var(--neo-raised-drop-soft),
+    0 1.25em 1em var(--neo-raised-drop-deep);
+}
+
+#setup {
+  width: min(100%, 420px);
+  padding: 32px 28px;
+  border-radius: 28px;
+  text-align: center;
+  background-color: var(--neo-sunken-fill);
+  box-shadow:
+    inset 0 0 0.8em var(--neo-sunken-hole),
+    inset 0 0.5em 0.4em var(--neo-sunken-hole),
+    inset 0 2em 1em var(--neo-sunken-depth),
+    0 -0.25em 0.25em var(--neo-sunken-edge-top),
+    0 0.25em 0.25em var(--neo-sunken-edge-bottom);
+}
+
+#setup h2 {
+  margin: 0 0 20px;
+  font-size: 2.4rem;
+  letter-spacing: 0.04em;
+  color: var(--neo-text);
+  text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+html[data-theme='light'] #setup h2 {
+  text-shadow: 0 2px 4px rgba(255,255,255,0.4);
+}
+
+#setup label {
+  display: block;
+  margin-bottom: 18px;
+  color: var(--neo-text-muted);
+}
+
+button, input[type='number'] {
+  border: none;
+  outline: none;
+  font: inherit;
+  border-radius: 12px;
+  padding: 12px 24px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--neo-text);
+  background-color: var(--neo-raised-fill);
+  box-shadow:
+    inset 0 0.15em 0.15em var(--neo-raised-highlight),
+    inset 0 -0.15em 0.15em var(--neo-raised-shadow),
+    0 0.4em 0.3em var(--neo-raised-drop-soft),
+    0 0.8em 0.6em var(--neo-raised-drop-deep);
+  transition: all 150ms ease-out;
+  cursor: pointer;
+}
+
+button:hover, input[type='number']:hover {
+  filter: brightness(1.05);
+}
+
+button:active {
+  box-shadow:
+    inset 0 0.15em 0.15em var(--neo-sunken-hole),
+    inset 0 0.4em 0.3em var(--neo-sunken-depth),
+    0 0.1em 0.1em var(--neo-sunken-edge-bottom);
+  transform: translateY(2px);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow:
+    inset 0 0.15em 0.15em var(--neo-raised-highlight),
+    inset 0 -0.15em 0.15em var(--neo-raised-shadow),
+    0 0.4em 0.3em var(--neo-raised-drop-soft),
+    0 0.8em 0.6em var(--neo-raised-drop-deep);
+}
+
+input[type='number'] {
+  background-color: var(--neo-sunken-fill);
+  box-shadow:
+    inset 0 0.15em 0.15em var(--neo-sunken-hole),
+    inset 0 0.4em 0.3em var(--neo-sunken-depth),
+    0 0.1em 0.1em var(--neo-sunken-edge-bottom);
+  color: var(--neo-text);
+  width: 80px;
+  text-align: center;
+  padding: 8px;
+}

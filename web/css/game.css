@@ -1,0 +1,182 @@
+#game {
+  display: grid;
+  grid-template-columns: minmax(220px, 320px) minmax(0, 1fr) minmax(220px, 320px);
+  align-items: stretch;
+  justify-content: center;
+  gap: 28px;
+  height: calc(100vh - 88px);
+  padding: 32px 24px 24px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.game-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.board-stage {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  width: 100%;
+}
+
+.board-shell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 28px;
+  padding: 32px;
+  box-sizing: border-box;
+  background-color: var(--neo-sunken-fill);
+  box-shadow:
+    inset 0 0 0.8em var(--neo-sunken-hole),
+    inset 0 0.5em 0.4em var(--neo-sunken-hole),
+    inset 0 2em 1em var(--neo-sunken-depth),
+    0 -0.25em 0.25em var(--neo-sunken-edge-top),
+    0 0.25em 0.25em var(--neo-sunken-edge-bottom);
+}
+
+.neo-board {
+  display: grid;
+  grid-template-columns: repeat(19, 1fr);
+  grid-template-rows: repeat(19, 1fr);
+  gap: 0;
+  
+  height: 100%;
+  width: auto;
+  max-width: 100%;
+  max-height: 100%;
+  aspect-ratio: 1 / 1;
+
+  position: relative;
+  background-color: transparent;
+  user-select: none;
+}
+
+.neo-cell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  cursor: crosshair;
+}
+
+.neo-cell::before {
+  content: "";
+  position: absolute;
+  width: 25%;
+  height: 25%;
+  max-width: 6px;
+  max-height: 6px;
+  border-radius: 50%;
+  background-color: var(--neo-text-muted);
+  opacity: 0.25;
+  pointer-events: none;
+  transition: opacity 300ms ease;
+}
+
+.neo-cell:hover::before {
+  opacity: 0.8;
+  transform: scale(1.5);
+  background-color: var(--neo-text);
+}
+
+.neo-stone {
+  width: 82%;
+  height: 82%;
+  border-radius: 30%;
+  position: absolute;
+  pointer-events: none;
+  z-index: 10;
+  box-sizing: border-box;
+  animation: popIn 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.3) forwards;
+  
+  box-shadow:
+    var(--neo-raised-drop-deep) 0.3vmin 0.4vmin 0.6vmin -0.1vmin,
+    inset rgba(255, 255, 255, 0.3) 0px 0.3vmin 0.5vmin -0.1vmin,
+    inset rgba(0, 0, 0, 0.2) 0px -0.3vmin 0.5vmin -0.1vmin;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  will-change: transform;
+  backface-visibility: hidden;
+}
+
+.neo-stone.black {
+  background: var(--stone-p1-bg);
+}
+
+.neo-stone.white {
+  background: var(--stone-p2-bg);
+}
+
+@keyframes popIn {
+  0% { transform: scale(0.3) translateY(-10px); opacity: 0; }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+.sidebar-card {
+  border-radius: 24px;
+  padding: 24px;
+  background-color: var(--neo-sunken-fill);
+  box-shadow:
+    inset 0 0 0.8em var(--neo-sunken-hole),
+    inset 0 0.5em 0.4em var(--neo-sunken-hole),
+    inset 0 2em 1em var(--neo-sunken-depth),
+    0 -0.25em 0.25em var(--neo-sunken-edge-top),
+    0 0.25em 0.25em var(--neo-sunken-edge-bottom);
+}
+
+.sidebar-card h3 {
+  margin: 0 0 14px;
+  font-size: 1.4rem;
+  color: var(--neo-text);
+}
+
+.sidebar-card p {
+  margin: 0 0 12px;
+  line-height: 1.45;
+  color: var(--neo-text-muted);
+}
+
+.sidebar-card p:last-child {
+  margin-bottom: 0;
+}
+
+.sidebar-card--placeholder {
+  flex: 1;
+}
+
+.sidebar-card--actions {
+  margin-top: auto;
+  background-color: transparent;
+  box-shadow: none;
+  padding: 0;
+}
+
+.sidebar-card--actions button {
+  width: 100%;
+}
+
+@media (max-width: 1320px) {
+  #game {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .board-stage {
+    order: 1;
+  }
+
+  .game-sidebar--left {
+    display: none;
+  }
+}
+
