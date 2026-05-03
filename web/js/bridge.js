@@ -10,7 +10,7 @@ var Bridge = (function() {
     });
   }
 
-  function gameInit(depth)     { G.ccall('game_init', null, ['number'], [depth]); }
+  function gameInit(depth, mode) { G.ccall('game_init', null, ['number', 'number'], [depth, mode]); }
   function placeStone(x, y)    { return G.ccall('place_stone', 'number', ['number', 'number'], [x, y]); }
   function aiPlay()            { return G.ccall('ai_play', 'number', [], []); }
   function getLastAiTime()     { return G.ccall('get_last_ai_time', 'number', [], []); }
@@ -19,6 +19,16 @@ var Bridge = (function() {
   function getCaptures(player) { return G.ccall('get_captures', 'number', ['number'], [player]); }
   function isGameOver()        { return G.ccall('is_game_over', 'number', [], []) === 1; }
   function getWinner()         { return G.ccall('get_winner', 'number', [], []); }
+  function getGameMode()       { return G.ccall('get_game_mode', 'number', [], []); }
+
+  //runs the full ai pipeline for the current player without applying the move
+  //returns {x, y} on success or null when no suggestion is available
+  function suggestMove() {
+    var packed = G.ccall('suggest_move', 'number', [], []);
+    if (packed < 0) return null;
+    return { x: packed % 19, y: Math.floor(packed / 19) };
+  }
+  function getLastSuggestTime() { return G.ccall('get_last_suggest_time', 'number', [], []); }
 
   //ai per-move debug counters
   function getLastNodes()        { return G.ccall('get_last_nodes',      'number', [], []); }
@@ -54,6 +64,9 @@ var Bridge = (function() {
     getLastTMoveOrder:  getLastTMoveOrder,
     getLastTZobrist:    getLastTZobrist,
     getLastTTT:         getLastTTT,
-    getLastTTotal:      getLastTTotal
+    getLastTTotal:      getLastTTotal,
+    getGameMode:        getGameMode,
+    suggestMove:        suggestMove,
+    getLastSuggestTime: getLastSuggestTime
   };
 })();

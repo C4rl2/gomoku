@@ -88,6 +88,9 @@ class AI {
 		void	setDepth(int depth);
 		int		getDepth() const;
 		int		getLastDepth() const;
+		//rebinds which team the ai maximises for; clears the tt when the team
+		//actually changes because zobrist indices are relative to _aiTeam
+		void	setAiTeam(e_stone team);
 		Move	getBestMove(const Board &board);
 
 		//instrumentation getters: values reflect the last getBestMove call

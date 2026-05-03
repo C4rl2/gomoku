@@ -51,10 +51,36 @@ var Render = (function() {
     };
   }
 
+  //draws a translucent hollow marker on the suggested empty cell
+  //must be re-applied after every board() call since board() resets innerHTML
+  function suggestion(cell) {
+    var prev = boardEl ? boardEl.querySelector(".neo-suggestion") : null;
+    if (prev && prev.parentNode) prev.parentNode.removeChild(prev);
+    if (!cell || !cells.length) return;
+    var idx = cell.y * 19 + cell.x;
+    var target = cells[idx];
+    if (!target) return;
+    var marker = document.createElement("div");
+    marker.className = "neo-suggestion";
+    marker.style.position       = "absolute";
+    marker.style.top            = "50%";
+    marker.style.left           = "50%";
+    marker.style.transform      = "translate(-50%, -50%)";
+    marker.style.width          = "60%";
+    marker.style.height         = "60%";
+    marker.style.borderRadius   = "50%";
+    marker.style.border         = "2px dashed rgba(255, 90, 90, 0.85)";
+    marker.style.boxSizing      = "border-box";
+    marker.style.pointerEvents  = "none";
+    target.style.position = target.style.position || "relative";
+    target.appendChild(marker);
+  }
+
   return {
     init:          init,
     board:         board,
-    cellFromClick: cellFromClick
+    cellFromClick: cellFromClick,
+    suggestion:    suggestion
   };
 })();
 

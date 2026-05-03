@@ -1,4 +1,10 @@
 var aiThinking = false;
+var currentMode = 0;
+var currentSuggestion = null;
+
+var MODE_AI = 0;
+var MODE_HVH = 1;
+var MODE_HVH_SUGGEST = 2;
 
 document.addEventListener('DOMContentLoaded', function() {
   var themeToggle = document.getElementById('theme-toggle');
@@ -26,7 +32,10 @@ Bridge.load(function() {
 
 function startGame() {
   var depth = Math.max(1, Math.min(10, parseInt(document.getElementById('depth').value) || 5));
-  Bridge.gameInit(depth);
+  var modeRadio = document.querySelector('input[name="mode"]:checked');
+  currentMode = modeRadio ? parseInt(modeRadio.value, 10) : 0;
+  currentSuggestion = null;
+  Bridge.gameInit(depth, currentMode);
 
   document.getElementById('content').style.display = 'none';
   document.getElementById('setup').style.display = 'none';
@@ -37,12 +46,16 @@ function startGame() {
   canvas.addEventListener('click', onCanvasClick);
 
   Render.board(Bridge.getBoard());
-  setStatus('Black to play');
+  setStatus('Blue to play');
+
+  if (currentMode === MODE_HVH_SUGGEST)
+    refreshSuggestion();
 }
 
 function onCanvasClick(evt) {
   if (aiThinking || Bridge.isGameOver()) return;
-  if (Bridge.getCurrentPlayer() !== 1) return;
+  //in mode AI only the black human can click; in HvH modes both players click
+  if (currentMode === MODE_AI && Bridge.getCurrentPlayer() !== 1) return;
 
   var cell = Render.cellFromClick(evt);
   if (!cell) return;
@@ -51,13 +64,55 @@ function onCanvasClick(evt) {
   if (result === -1) { setStatus('Invalid move'); return; }
   if (result === -2) { setStatus('Double-three forbidden!'); return; }
 
+  //a successful move invalidates the previous suggestion
+  currentSuggestion = null;
   Render.board(Bridge.getBoard());
   updateCaptures();
   if (checkGameOver()) return;
 
+  if (currentMode === MODE_AI) {
+    aiThinking = true;
+    setStatus('AI thinking...');
+    setTimeout(runAi, 20);
+  } else if (currentMode === MODE_HVH) {
+    setStatus(Bridge.getCurrentPlayer() === 1 ? 'Blue to play' : 'Pink to play');
+  } else { //MODE_HVH_SUGGEST
+    setStatus(Bridge.getCurrentPlayer() === 1 ? 'Blue to play' : 'Pink to play');
+    refreshSuggestion();
+  }
+}
+
+function refreshSuggestion() {
+  var label = document.getElementById('suggestion');
+  if (Bridge.isGameOver()) {
+    currentSuggestion = null;
+    if (label) label.textContent = '';
+    return;
+  }
+
   aiThinking = true;
-  setStatus('AI thinking...');
-  setTimeout(runAi, 20);
+  setStatus('AI suggesting...');
+  setTimeout(function() {
+    currentSuggestion = Bridge.suggestMove();
+    aiThinking = false;
+
+    var t = Bridge.getLastSuggestTime();
+    document.getElementById('ai-time').textContent  = 'AI time: ' + t.toFixed(3) + 's';
+    document.getElementById('ai-depth').textContent = 'AI depth reached: ' + Bridge.getLastDepth();
+    updateDebugPanel();
+
+    Render.board(Bridge.getBoard());
+    if (Render.suggestion) Render.suggestion(currentSuggestion);
+
+    if (label) {
+      if (currentSuggestion)
+        label.textContent = 'Suggestion: (' + currentSuggestion.x + ', ' + currentSuggestion.y + ')';
+      else
+        label.textContent = '';
+    }
+
+    setStatus(Bridge.getCurrentPlayer() === 1 ? 'Blue to play' : 'Pink to play');
+  }, 20);
 }
 
 function runAi() {
@@ -73,7 +128,7 @@ function runAi() {
 
   if (result === -1) { setStatus('Draw — board full'); return; }
   if (checkGameOver()) return;
-  setStatus('Black to play');
+  setStatus('Blue to play');
 }
 
 function updateDebugPanel() {
@@ -98,7 +153,7 @@ function updateDebugPanel() {
 function checkGameOver() {
   if (!Bridge.isGameOver()) return false;
   var w     = Bridge.getWinner();
-  var names = { 1: 'Black', 2: 'White', 3: 'Draw' };
+  var names = { 1: 'Blue', 2: 'Pink', 3: 'Draw' };
   setStatus(w === 3 ? 'Draw!' : names[w] + ' wins!');
   return true;
 }

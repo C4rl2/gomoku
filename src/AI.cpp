@@ -111,6 +111,17 @@ int AI::getLastDepth() const {
 	return this->_lastDepth;
 }
 
+//rebinds which team is treated as the maximiser; the tt is invalidated when
+//the team actually changes because every entry was keyed by a hash whose
+//ZOBRIST_AI/ZOBRIST_OPP slots were interpreted under the previous mapping
+void AI::setAiTeam(e_stone team) {
+	if (team == this->_aiTeam)
+		return;
+	this->_aiTeam       = team;
+	this->_opponentTeam = (team == BLACK) ? WHITE : BLACK;
+	this->_clearTT();
+}
+
 //instrumentation getters: snapshot of the last getBestMove invocation
 int AI::getLastNodes() const               { return this->_statNodes; }
 int AI::getLastCutoffs() const             { return this->_statCutoffs; }
@@ -549,6 +560,17 @@ Move AI::getBestMove(const Board &board) {
 
 	double mo0 = AI::_now();
 	std::vector<Move> moves = this->_generateMoves(board);
+	//filter out illegal double-three moves for the side to move at the root
+	//mirrors Game::placeStone rule so the chosen / suggested move is always legal
+	std::vector<Move> legal;
+	for (size_t i = 0; i < moves.size(); ++i) {
+		if (board.isDoubleThree(moves[i].x, moves[i].y, this->_aiTeam) &&
+			!board.willCapture(moves[i].x, moves[i].y, this->_aiTeam))
+			continue;
+		legal.push_back(moves[i]);
+	}
+	if (!legal.empty())
+		moves = legal;
 	this->_statTimeMoveOrdering += AI::_now() - mo0;
 
 	if (moves.empty()) {

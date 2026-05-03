@@ -37,6 +37,12 @@
   <div id="content">
     <div id="setup" class="neo-sunken">
       <h2>Gomoku</h2>
+      <fieldset class="mode-select">
+        <legend>Game mode</legend>
+        <label><input type="radio" name="mode" value="0" checked /> Human vs AI</label>
+        <label><input type="radio" name="mode" value="1" /> Human vs Human</label>
+        <label><input type="radio" name="mode" value="2" /> Human vs Human (AI suggestion)</label>
+      </fieldset>
       <label>AI depth (1-10): <input id="depth" type="number" min="1" max="10" value="5" /></label>
       <button id="start-btn" onclick="startGame()" disabled>Loading...</button>
     </div>
@@ -68,9 +74,10 @@
       <div class="sidebar-card">
         <h3>Game panel</h3>
         <p id="status"></p>
-        <p>Black captures: <span id="cap-black">0</span> &nbsp; White captures: <span id="cap-white">0</span></p>
+        <p>Blue captures: <span id="cap-black">0</span> &nbsp; Pink captures: <span id="cap-white">0</span></p>
         <p id="ai-time"></p>
 		<p id="ai-depth"></p>
+		<p id="suggestion"></p>
       </div>
       <div class="sidebar-card sidebar-card--actions">
         <button onclick="location.reload()">New game</button>

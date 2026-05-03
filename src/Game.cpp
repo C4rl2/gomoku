@@ -1,7 +1,7 @@
 #include "Game.hpp"
 #include <ctime>
 
-Game::Game() : _ai(WHITE), _currentPlayer(BLACK), _gameOver(false), _winner(0) {}
+Game::Game() : _ai(WHITE), _currentPlayer(BLACK), _gameOver(false), _winner(0), _gameMode(MODE_AI) {}
 
 Game::Game(const Game &other) {
 	*this = other;
@@ -14,6 +14,7 @@ Game &Game::operator=(const Game &other) {
 		this->_currentPlayer = other._currentPlayer;
 		this->_gameOver      = other._gameOver;
 		this->_winner        = other._winner;
+		this->_gameMode      = other._gameMode;
 	}
 	return *this;
 }
@@ -28,13 +29,14 @@ void Game::_switchPlayer() {
 }
 
 // Replaces the depth prompt loop from run().
-void Game::init(int depth) {
+void Game::init(int depth, int mode) {
 	this->_board         = Board();
 	this->_ai            = AI(WHITE);
 	this->_ai.setDepth(depth);
 	this->_currentPlayer = BLACK;
 	this->_gameOver      = false;
 	this->_winner        = 0;
+	this->_gameMode      = (e_game_mode)mode;
 }
 
 // Extracted from the setStone block inside run()'s while loop.
@@ -84,7 +86,7 @@ int Game::placeStone(int x, int y) {
 // Replaces the AI block from run(). timeSpent is displayed by the frontend
 // (the subject requires showing the AI computation time).
 int Game::aiPlay(double &timeSpent) {
-	if (this->_gameOver)
+	if (this->_gameOver || this->_gameMode != MODE_AI)
 		return -3;
 
 	clock_t start  = clock();
@@ -99,6 +101,26 @@ int Game::aiPlay(double &timeSpent) {
 	}
 
 	return this->_applyMove(aiMove.x, aiMove.y);
+}
+
+//runs the full ai pipeline (minimax / ab / zobrist / tt / id / move ordering)
+//for the current player without mutating the game state, so the suggestion
+//can be displayed and either followed or ignored by the human player
+Move Game::suggestMove(double &timeSpent) {
+	Move none = {-1, -1, 0};
+	timeSpent = 0.0;
+	if (this->_gameOver || this->_gameMode != MODE_HVH_SUGGEST)
+		return none;
+
+	//rebind ai team to the current player so minimax maximises for them
+	//setAiTeam clears the tt when the team actually changes
+	this->_ai.setAiTeam(this->_currentPlayer);
+
+	clock_t start = clock();
+	Move    m     = this->_ai.getBestMove(this->_board);
+	clock_t end   = clock();
+	timeSpent = (double)(end - start) / CLOCKS_PER_SEC;
+	return m;
 }
 
 // Serializes the grid to a flat array for the JS canvas renderer.
@@ -130,6 +152,10 @@ int Game::getDepth() const {
 
 int Game::getLastDepth() const {
 	return this->_ai.getLastDepth();
+}
+
+int Game::getGameMode() const {
+	return (int)this->_gameMode;
 }
 
 //forward instrumentation getters for the frontend debug panel
