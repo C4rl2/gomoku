@@ -37,6 +37,7 @@ AI::AI() : _aiTeam(WHITE), _opponentTeam(BLACK), _depth(5), _startTime(0.0), _la
 	_ttable = new TTEntry[TT_SIZE];
 	_initZobrist();
 	_clearTT();
+	_resetStats();
 }
 
 AI::AI(e_stone aiTeam) : _aiTeam(aiTeam), _depth(5), _startTime(0.0), _lastDepth(0) {
@@ -44,9 +45,11 @@ AI::AI(e_stone aiTeam) : _aiTeam(aiTeam), _depth(5), _startTime(0.0), _lastDepth
 	_ttable = new TTEntry[TT_SIZE];
 	_initZobrist();
 	_clearTT();
+	_resetStats();
 }
 
 AI::AI(const AI &other) : _ttable(NULL), _startTime(0.0), _lastDepth(0) {
+	_resetStats();
 	*this = other;
 }
 
@@ -67,8 +70,29 @@ AI &AI::operator=(const AI &other) {
 			this->_ttable = new TTEntry[TT_SIZE];
 		for (int i = 0; i < TT_SIZE; ++i)
 			this->_ttable[i] = other._ttable[i];
+		//copy instrumentation snapshot from other
+		this->_statNodes            = other._statNodes;
+		this->_statCutoffs          = other._statCutoffs;
+		this->_statTTHits           = other._statTTHits;
+		this->_statTimeHeuristic    = other._statTimeHeuristic;
+		this->_statTimeMoveOrdering = other._statTimeMoveOrdering;
+		this->_statTimeZobrist      = other._statTimeZobrist;
+		this->_statTimeTT           = other._statTimeTT;
+		this->_statTimeTotal        = other._statTimeTotal;
 	}
 	return *this;
+}
+
+//zero all per-move instrumentation counters
+void AI::_resetStats() {
+	this->_statNodes            = 0;
+	this->_statCutoffs          = 0;
+	this->_statTTHits           = 0;
+	this->_statTimeHeuristic    = 0.0;
+	this->_statTimeMoveOrdering = 0.0;
+	this->_statTimeZobrist      = 0.0;
+	this->_statTimeTT           = 0.0;
+	this->_statTimeTotal        = 0.0;
 }
 
 AI::~AI() {
@@ -86,6 +110,16 @@ int AI::getDepth() const {
 int AI::getLastDepth() const {
 	return this->_lastDepth;
 }
+
+//instrumentation getters: snapshot of the last getBestMove invocation
+int AI::getLastNodes() const               { return this->_statNodes; }
+int AI::getLastCutoffs() const             { return this->_statCutoffs; }
+int AI::getLastTTHits() const              { return this->_statTTHits; }
+double AI::getLastTimeHeuristic() const    { return this->_statTimeHeuristic; }
+double AI::getLastTimeMoveOrdering() const { return this->_statTimeMoveOrdering; }
+double AI::getLastTimeZobrist() const      { return this->_statTimeZobrist; }
+double AI::getLastTimeTT() const           { return this->_statTimeTT; }
+double AI::getLastTimeTotal() const        { return this->_statTimeTotal; }
 
 //fills _zobristTable with deterministic pseudo-random 64-bit values
 void AI::_initZobrist() {
@@ -278,42 +312,63 @@ int AI::_minimax(Board board, int depth, int alpha, int beta, bool isMaximizing,
 	if (this->_timeUp())
 		return (isMaximizing ? -2000001 : 2000001);
 
-	//probe transposition table before doing any work
+	//count this invocation as one explored node
+	this->_statNodes++;
+
+	//probe transposition table before doing any work (timed)
+	double tt0 = AI::_now();
 	unsigned int ttIndex = (unsigned int)(hash & TT_MASK);
 	TTEntry &entry = _ttable[ttIndex];
 
-	if (entry.depth >= depth && entry.hash == hash) {
+	bool ttUsable = (entry.depth >= depth && entry.hash == hash);
+	if (ttUsable) {
+		this->_statTTHits++;
 		//slot matches this position and was computed at least as deep
-		if (entry.flag == TT_EXACT)
+		if (entry.flag == TT_EXACT) {
+			this->_statTimeTT += AI::_now() - tt0;
 			return entry.score; //exact score: use it directly
+		}
 		if (entry.flag == TT_LOWER && entry.score > alpha)
 			alpha = entry.score; //tighten alpha with stored lower bound
 		if (entry.flag == TT_UPPER && entry.score < beta)
 			beta = entry.score; //tighten beta with stored upper bound
-		if (alpha >= beta)
+		if (alpha >= beta) {
+			this->_statTimeTT += AI::_now() - tt0;
 			return entry.score; //window already closed: prune
+		}
 	}
+	this->_statTimeTT += AI::_now() - tt0;
 
 	//if we reach max depth we stop recursing
 	if (depth == 0) {
+		double e0 = AI::_now();
 		int score = this->_evaluateBoard(board);
+		this->_statTimeHeuristic += AI::_now() - e0;
 		//store exact leaf score in the table
+		double s0 = AI::_now();
 		entry.hash  = hash;
 		entry.score = score;
 		entry.depth = 0;
 		entry.flag  = TT_EXACT;
+		this->_statTimeTT += AI::_now() - s0;
 		return score;
 	}
 
-	//list of possible moves
+	//list of possible moves (timed: ordering happens inside _generateMoves)
+	double mo0 = AI::_now();
 	std::vector<Move> moves = this->_generateMoves(board);
+	this->_statTimeMoveOrdering += AI::_now() - mo0;
 
 	if (moves.empty()) {
+		double e0 = AI::_now();
 		int score = this->_evaluateBoard(board);
+		this->_statTimeHeuristic += AI::_now() - e0;
+		double s0 = AI::_now();
 		entry.hash  = hash;
 		entry.score = score;
 		entry.depth = depth;
 		entry.flag  = TT_EXACT;
+		this->_statTimeTT += AI::_now() - s0;
 		return score;
 	}
 
@@ -371,8 +426,10 @@ int AI::_minimax(Board board, int depth, int alpha, int beta, bool isMaximizing,
 			if (eval > alpha)
 				alpha = eval; //this branch got the higher nb of pts
 
-			if (beta <= alpha)
+			if (beta <= alpha) {
+				this->_statCutoffs++;
 				break; //if humain has a better move, pruning
+			}
 		}
 	} else {
 		//humain's turn, searching for lowest value (beta)
@@ -423,12 +480,15 @@ int AI::_minimax(Board board, int depth, int alpha, int beta, bool isMaximizing,
 			if (eval < beta)
 				beta = eval; //this branch got the lowest nb of pts
 
-			if (beta <= alpha)
+			if (beta <= alpha) {
+				this->_statCutoffs++;
 				break; //if AI has better move elsewhere, won't go with this branch
+			}
 		}
 	}
 
-	//store result in transposition table with correct flag
+	//store result in transposition table with correct flag (timed)
+	double s0 = AI::_now();
 	e_tt_flag flag;
 	if (bestScore <= origAlpha)
 		flag = TT_UPPER; //we never raised alpha: upper bound
@@ -444,6 +504,7 @@ int AI::_minimax(Board board, int depth, int alpha, int beta, bool isMaximizing,
 		entry.depth = depth;
 		entry.flag  = flag;
 	}
+	this->_statTimeTT += AI::_now() - s0;
 
 	return bestScore;
 }
@@ -456,6 +517,9 @@ Move AI::getBestMove(const Board &board) {
 	//clear TT at the start of each real move (not between ID iterations)
 	_clearTT();
 	this->_lastDepth = 0;
+
+	//reset all per-move debug counters
+	this->_resetStats();
 
 	//record start time for the budget shared across all ID iterations
 	this->_startTime = AI::_now();
@@ -479,25 +543,32 @@ Move AI::getBestMove(const Board &board) {
 		m.x = (hx <= 9) ? hx + 1 : hx - 1;
 		m.y = (hy <= 9) ? hy + 1 : hy - 1;
 		m.score = 0;
+		this->_statTimeTotal = AI::_now() - this->_startTime;
 		return m;
 	}
 
+	double mo0 = AI::_now();
 	std::vector<Move> moves = this->_generateMoves(board);
-	
+	this->_statTimeMoveOrdering += AI::_now() - mo0;
+
 	if (moves.empty()) {
 		Move bestMove;
 		bestMove.x = -1;
 		bestMove.y = -1; //if board is full
 		bestMove.score = 0;
+		this->_statTimeTotal = AI::_now() - this->_startTime;
 		return bestMove;
 	}
 
 	if (moves.size() == 1) {
+		this->_statTimeTotal = AI::_now() - this->_startTime;
 		return moves[0]; //if empty board, play middle without losing time
 	}
 
-	//compute the root hash once; children update it incrementally
+	//compute the root hash once; children update it incrementally (timed)
+	double zh0 = AI::_now();
 	unsigned long long rootHash = _computeHash(board);
+	this->_statTimeZobrist += AI::_now() - zh0;
 
 	//check for immediate wins at root before launching ID
 	for (size_t i = 0; i < moves.size(); ++i) {
@@ -506,8 +577,10 @@ Move AI::getBestMove(const Board &board) {
 		nextBoard.executeCaptures(moves[i].x, moves[i].y, this->_aiTeam);
 		bool winByCapture = (nextBoard.getCaptures(this->_aiTeam) >= 5);
 		if (nextBoard.checkWin(moves[i].x, moves[i].y, this->_aiTeam) == WIN
-			|| winByCapture)
+			|| winByCapture) {
+			this->_statTimeTotal = AI::_now() - this->_startTime;
 			return moves[i];
+		}
 	}
 
 	//iterative deepening: depth 1 to _depth, stop if time runs out
@@ -591,6 +664,7 @@ Move AI::getBestMove(const Board &board) {
 		}
 	}
 
+	this->_statTimeTotal = AI::_now() - this->_startTime;
 	return bestMove;
 }
 

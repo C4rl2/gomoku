@@ -44,9 +44,17 @@
 
   <div id="game" style="display:none">
     <aside class="game-sidebar game-sidebar--left">
-      <div class="sidebar-card sidebar-card--placeholder">
-        <h3>Player panel</h3>
-        <p>Reserved for captures, turn order and game info.</p>
+      <div class="sidebar-card">
+        <h3>AI debug</h3>
+        <p>Iterative deepening: <span id="dbg-id">-</span> ms</p>
+        <p>Heuristic eval: <span id="dbg-eval">-</span> ms</p>
+        <p>Move ordering: <span id="dbg-order">-</span> ms</p>
+        <p>Zobrist hashing: <span id="dbg-zobrist">-</span> ms</p>
+        <p>Transposition table: <span id="dbg-tt">-</span> ms</p>
+        <p>Minimax core: <span id="dbg-mm">-</span> ms</p>
+        <p>Alpha-beta cutoffs: <span id="dbg-cutoffs">-</span></p>
+        <p>TT hits: <span id="dbg-tthits">-</span></p>
+        <p>Explored nodes: <span id="dbg-nodes">-</span></p>
       </div>
     </aside>
 

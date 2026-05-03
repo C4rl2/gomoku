@@ -21,6 +21,15 @@ extern "C" {
 	EMSCRIPTEN_KEEPALIVE int	is_game_over()            { return g_game.isGameOver() ? 1 : 0; }
 	EMSCRIPTEN_KEEPALIVE int	get_winner()              { return g_game.getWinner(); }
 	EMSCRIPTEN_KEEPALIVE int	get_last_depth()          { return g_game.getLastDepth(); }
+
+	EMSCRIPTEN_KEEPALIVE int	get_last_nodes()          { return g_game.getLastNodes(); }
+	EMSCRIPTEN_KEEPALIVE int	get_last_cutoffs()        { return g_game.getLastCutoffs(); }
+	EMSCRIPTEN_KEEPALIVE int	get_last_tt_hits()        { return g_game.getLastTTHits(); }
+	EMSCRIPTEN_KEEPALIVE double	get_last_t_heuristic()    { return g_game.getLastTimeHeuristic(); }
+	EMSCRIPTEN_KEEPALIVE double	get_last_t_move_order()   { return g_game.getLastTimeMoveOrdering(); }
+	EMSCRIPTEN_KEEPALIVE double	get_last_t_zobrist()      { return g_game.getLastTimeZobrist(); }
+	EMSCRIPTEN_KEEPALIVE double	get_last_t_tt()           { return g_game.getLastTimeTT(); }
+	EMSCRIPTEN_KEEPALIVE double	get_last_t_total()        { return g_game.getLastTimeTotal(); }
 }
 
 int main() { return 0; }

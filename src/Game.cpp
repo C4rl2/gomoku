@@ -131,3 +131,13 @@ int Game::getDepth() const {
 int Game::getLastDepth() const {
 	return this->_ai.getLastDepth();
 }
+
+//forward instrumentation getters for the frontend debug panel
+int Game::getLastNodes() const               { return this->_ai.getLastNodes(); }
+int Game::getLastCutoffs() const             { return this->_ai.getLastCutoffs(); }
+int Game::getLastTTHits() const              { return this->_ai.getLastTTHits(); }
+double Game::getLastTimeHeuristic() const    { return this->_ai.getLastTimeHeuristic(); }
+double Game::getLastTimeMoveOrdering() const { return this->_ai.getLastTimeMoveOrdering(); }
+double Game::getLastTimeZobrist() const      { return this->_ai.getLastTimeZobrist(); }
+double Game::getLastTimeTT() const           { return this->_ai.getLastTimeTT(); }
+double Game::getLastTimeTotal() const        { return this->_ai.getLastTimeTotal(); }

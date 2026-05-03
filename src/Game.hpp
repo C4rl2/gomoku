@@ -39,6 +39,16 @@ class Game {
 		int		getWinner() const;
 		int		getDepth() const;
 		int		getLastDepth() const;
+
+		//ai per-move instrumentation forwarded from the underlying AI instance
+		int		getLastNodes() const;
+		int		getLastCutoffs() const;
+		int		getLastTTHits() const;
+		double	getLastTimeHeuristic() const;
+		double	getLastTimeMoveOrdering() const;
+		double	getLastTimeZobrist() const;
+		double	getLastTimeTT() const;
+		double	getLastTimeTotal() const;
 };
 
 #endif
