@@ -1,8 +1,10 @@
 #ifndef GAME_HPP
 # define GAME_HPP
 
+# include <vector>
 # include "Board.hpp"
 # include "AI.hpp"
+# include "MoveRecord.hpp"
 
 //game mode selected from the home screen
 enum e_game_mode {
@@ -21,6 +23,7 @@ class Game {
 		bool		_gameOver;
 		int			_winner; // 0=none, 1=BLACK, 2=WHITE, 3=draw
 		e_game_mode	_gameMode;
+		std::vector<MoveRecord>	_history;
 
 		void	_switchPlayer();
 		int		_applyMove(int x, int y);
@@ -36,6 +39,9 @@ class Game {
 		// Replaces the human input block in run() — validates rules then calls _applyMove.
 		// Returns: 0=ok, -1=invalid, -2=double-three, -3=game already over
 		int		placeStone(int x, int y);
+		//restores the state saved before the last successful move
+		//returns: 0=ok, -1=history empty
+		int		undoMove();
 		// Replaces the AI block in run() — computes best move and applies it.
 		// Returns: 0=ok, -1=draw (board full), -3=game already over (or non-AI mode)
 		int		aiPlay(double &timeSpent);

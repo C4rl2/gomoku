@@ -12,6 +12,7 @@ var Bridge = (function() {
 
   function gameInit(depth, mode) { G.ccall('game_init', null, ['number', 'number'], [depth, mode]); }
   function placeStone(x, y)    { return G.ccall('place_stone', 'number', ['number', 'number'], [x, y]); }
+  function undoMove()          { return G.ccall('undo_move', 'number', [], []); }
   function aiPlay()            { return G.ccall('ai_play', 'number', [], []); }
   function getLastAiTime()     { return G.ccall('get_last_ai_time', 'number', [], []); }
   function getLastDepth()      { return G.ccall('get_last_depth', 'number', [], []); }
@@ -49,6 +50,7 @@ var Bridge = (function() {
     load:               load,
     gameInit:           gameInit,
     placeStone:         placeStone,
+    undoMove:           undoMove,
     aiPlay:             aiPlay,
     getLastAiTime:      getLastAiTime,
     getLastDepth:       getLastDepth,

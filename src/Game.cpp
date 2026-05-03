@@ -15,6 +15,7 @@ Game &Game::operator=(const Game &other) {
 		this->_gameOver      = other._gameOver;
 		this->_winner        = other._winner;
 		this->_gameMode      = other._gameMode;
+		this->_history       = other._history;
 	}
 	return *this;
 }
@@ -37,13 +38,19 @@ void Game::init(int depth, int mode) {
 	this->_gameOver      = false;
 	this->_winner        = 0;
 	this->_gameMode      = (e_game_mode)mode;
+	this->_history.clear();
 }
 
 // Extracted from the setStone block inside run()'s while loop.
 // Shared by placeStone() and aiPlay() to avoid duplication.
 int Game::_applyMove(int x, int y) {
+	MoveRecord rec(this->_board, this->_currentPlayer, this->_gameOver, this->_winner);
+
 	if (!this->_board.setStone(x, y, this->_currentPlayer))
 		return -1;
+
+	//commit pre-move snapshot only after the move is known legal
+	this->_history.push_back(rec);
 
 	this->_board.executeCaptures(x, y, this->_currentPlayer);
 
@@ -81,6 +88,21 @@ int Game::placeStone(int x, int y) {
 		return -2;
 
 	return this->_applyMove(x, y);
+}
+
+//restores the state saved before the last successful move
+//covers grid, capture counters, current player, game-over and winner
+int Game::undoMove() {
+	if (this->_history.empty())
+		return -1;
+
+	const MoveRecord &rec = this->_history.back();
+	this->_board         = rec._board;
+	this->_currentPlayer = rec._currentPlayer;
+	this->_gameOver      = rec._gameOver;
+	this->_winner        = rec._winner;
+	this->_history.pop_back();
+	return 0;
 }
 
 // Replaces the AI block from run(). timeSpent is displayed by the frontend

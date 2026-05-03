@@ -82,6 +82,23 @@ function onCanvasClick(evt) {
   }
 }
 
+function onUndoClick() {
+  if (aiThinking) return;
+  if (Bridge.undoMove() !== 0) return;
+
+  //in HvAI, if we just undid the AI move, also undo the human move that preceded it
+  if (currentMode === MODE_AI && Bridge.getCurrentPlayer() === 2) {
+    Bridge.undoMove();
+  }
+
+  currentSuggestion = null;
+  Render.board(Bridge.getBoard());
+  updateCaptures();
+  setStatus(Bridge.getCurrentPlayer() === 1 ? 'Blue to play' : 'Pink to play');
+
+  if (currentMode === MODE_HVH_SUGGEST) refreshSuggestion();
+}
+
 function refreshSuggestion() {
   var label = document.getElementById('suggestion');
   if (Bridge.isGameOver()) {

@@ -18,7 +18,7 @@ SRCS_DIR = src
 OBJS_DIR = objs
 WEB_DIR  = web
 
-SRCS_FILES = main.cpp Board.cpp Game.cpp AI.cpp
+SRCS_FILES = main.cpp Board.cpp Game.cpp AI.cpp MoveRecord.cpp
 
 SRCS      = $(addprefix $(SRCS_DIR)/, $(SRCS_FILES))
 OBJS      = $(addprefix $(OBJS_DIR)/, $(SRCS_FILES:.cpp=.o))

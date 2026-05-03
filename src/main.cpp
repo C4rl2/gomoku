@@ -16,6 +16,7 @@ static int    g_suggested_y       = -1;
 extern "C" {
 	EMSCRIPTEN_KEEPALIVE void	game_init(int depth, int mode) { g_game.init(depth, mode); g_suggested_x = -1; g_suggested_y = -1; g_last_suggest_time = 0.0; }
 	EMSCRIPTEN_KEEPALIVE int	place_stone(int x, int y) { return g_game.placeStone(x, y); }
+	EMSCRIPTEN_KEEPALIVE int	undo_move()               { return g_game.undoMove(); }
 	EMSCRIPTEN_KEEPALIVE int	ai_play()                 { return g_game.aiPlay(g_last_ai_time); }
 	EMSCRIPTEN_KEEPALIVE double	get_last_ai_time()        { return g_last_ai_time; }
 	EMSCRIPTEN_KEEPALIVE int*	get_board()               { g_game.getBoard(g_board_buf); return g_board_buf; }
