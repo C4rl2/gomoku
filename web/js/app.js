@@ -69,10 +69,30 @@ function runAi() {
   updateCaptures();
   document.getElementById('ai-time').textContent  = 'AI time: ' + t.toFixed(3) + 's';
   document.getElementById('ai-depth').textContent = 'AI depth reached: ' + Bridge.getLastDepth();
+  updateDebugPanel();
 
   if (result === -1) { setStatus('Draw — board full'); return; }
   if (checkGameOver()) return;
   setStatus('Black to play');
+}
+
+function updateDebugPanel() {
+  var total    = Bridge.getLastTTotal();
+  var heur     = Bridge.getLastTHeuristic();
+  var order    = Bridge.getLastTMoveOrder();
+  var zobrist  = Bridge.getLastTZobrist();
+  var tt       = Bridge.getLastTTT();
+  var coreMM   = Math.max(0, total - (heur + order + zobrist + tt));
+
+  document.getElementById('dbg-id').textContent       = total.toFixed(2);
+  document.getElementById('dbg-eval').textContent     = heur.toFixed(2);
+  document.getElementById('dbg-order').textContent    = order.toFixed(2);
+  document.getElementById('dbg-zobrist').textContent  = zobrist.toFixed(3);
+  document.getElementById('dbg-tt').textContent       = tt.toFixed(2);
+  document.getElementById('dbg-mm').textContent       = coreMM.toFixed(2);
+  document.getElementById('dbg-cutoffs').textContent  = Bridge.getLastCutoffs();
+  document.getElementById('dbg-tthits').textContent   = Bridge.getLastTTHits();
+  document.getElementById('dbg-nodes').textContent    = Bridge.getLastNodes();
 }
 
 function checkGameOver() {

@@ -53,6 +53,17 @@ class AI {
 		int					_lastDepth;  //depth actually reached in the last getBestMove call
 		bool				_timeUp() const; //returns true if TIME_BUDGET_MS elapsed
 
+		//per-move instrumentation counters reset at the start of getBestMove
+		int		_statNodes;            //nb of _minimax invocations executed
+		int		_statCutoffs;          //nb of alpha-beta beta<=alpha breaks
+		int		_statTTHits;           //nb of transposition table reuses
+		double	_statTimeHeuristic;    //ms accumulated inside _evaluateBoard
+		double	_statTimeMoveOrdering; //ms accumulated inside _generateMoves
+		double	_statTimeZobrist;      //ms accumulated inside _computeHash
+		double	_statTimeTT;           //ms accumulated inside TT probe and store
+		double	_statTimeTotal;        //ms total wall-clock spent in getBestMove
+		void	_resetStats();         //zero all counters above
+
 		int					_evaluateBoard(const Board &board) const;
 		int					_evaluateLine(int count, int openEnds, bool isAi) const;
 		bool				_hasNeighbor(const Board &board, int x, int y, int distance) const;
@@ -78,6 +89,16 @@ class AI {
 		int		getDepth() const;
 		int		getLastDepth() const;
 		Move	getBestMove(const Board &board);
+
+		//instrumentation getters: values reflect the last getBestMove call
+		int		getLastNodes() const;
+		int		getLastCutoffs() const;
+		int		getLastTTHits() const;
+		double	getLastTimeHeuristic() const;
+		double	getLastTimeMoveOrdering() const;
+		double	getLastTimeZobrist() const;
+		double	getLastTimeTT() const;
+		double	getLastTimeTotal() const;
 };
 
 #endif
