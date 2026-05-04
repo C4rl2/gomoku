@@ -27,25 +27,26 @@
 }
 
 html[data-theme='light'] {
-  --neo-bg: #eff1f5;
-  --neo-text: #4c4f69;
-  --neo-text-muted: #6c6f85;
-  --board-line: #ccd0da;
+  --neo-bg: #eff1f5; /* Base */
+  --neo-text: #4c4f69; /* Text */
+  --neo-text-muted: #6c6f85; /* Subtext 0 */
+  --board-line: #ccd0da; /* Surface 0 */
 
   --neo-raised-fill: #eff1f5;
   --neo-raised-highlight: #ffffff;
-  --neo-raised-shadow: rgba(114, 135, 253, 0.15);
-  --neo-raised-drop-soft: rgba(114, 135, 253, 0.12);
-  --neo-raised-drop-deep: rgba(114, 135, 253, 0.22);
+  --neo-raised-shadow: rgba(76, 79, 105, 0.1); /* Ombre grise (Text) */
+  --neo-raised-drop-soft: rgba(76, 79, 105, 0.12); /* Ombre grise (Text) */
+  --neo-raised-drop-deep: rgba(76, 79, 105, 0.2); /* Ombre grise sombre (Text) */
 
-  --neo-sunken-fill: rgba(204, 208, 218, 0.25);
-  --neo-sunken-hole: rgba(114, 135, 253, 0.1);
-  --neo-sunken-depth: rgba(114, 135, 253, 0.15);
-  --neo-sunken-edge-top: rgba(114, 135, 253, 0.1);
+  --neo-sunken-fill: rgba(204, 208, 218, 0.35); /* Surface 0 transparent */
+  --neo-sunken-hole: rgba(76, 79, 105, 0.12); /* Ombre grise interne */
+  --neo-sunken-depth: rgba(76, 79, 105, 0.18); /* Ombre grise interne foncée */
+  --neo-sunken-edge-top: rgba(76, 79, 105, 0.12);
   --neo-sunken-edge-bottom: #ffffff;
 
-  --stone-p1-bg: linear-gradient(135deg, #1e66f5 0%, #209fb5 100%);
-  --stone-p2-bg: linear-gradient(135deg, #ea76cb 0%, #dd7878 100%);
+  /* Joueurs */
+  --stone-p1-bg: linear-gradient(135deg, #1e66f5 0%, #209fb5 100%); /* Blue -> Sapphire */
+  --stone-p2-bg: linear-gradient(135deg, #ea76cb 0%, #dd7878 100%); /* Pink -> Flamingo */
 }
 
 html, body {
