@@ -191,70 +191,190 @@ int AI::_evaluateLine(int count, int openEnds, bool isAi) const {
 	return isAi ? score : -score; //-score if its the opponent (humain) alignements
 }
 
-//heuristic, give score to the actual board
+//heuristic, single-pass scan over the board that harvests in one walk:
+//  - per-axis alignment scoring (gated by developable space)
+//  - per-side open-three / four tallies for fork detection
+//  - per-side vulnerable-pair tallies for potential-capture scoring
 int AI::_evaluateBoard(const Board &board) const {
 	int totalScore = 0;
 	int directions[4][2] = {{1, 0}, {0, 1}, {1, 1}, {-1, 1}};
-		
+
+	int aiOpenThree = 0, aiFour = 0;
+	int oppOpenThree = 0, oppFour = 0;
+	int aiVulnerable = 0, oppVulnerable = 0;
+
 	for (int y = 0; y < 19; ++y) {
 		for (int x = 0; x < 19; ++x) {
 			e_stone currentStone = board.getStone(x, y);
-				
+
 			if (currentStone == EMPTY)
 				continue; //empty case are useless
 
 			bool isAi = (currentStone == this->_aiTeam);
-			
+			e_stone opp = isAi ? this->_opponentTeam : this->_aiTeam;
+
 			//checking 4 axes around this stone
 			for (int d = 0; d < 4; ++d) {
 				int dx = directions[d][0];
 				int dy = directions[d][1];
-				
-				//to provide from counting twice a stone
+
 				int prevX = x - dx;
 				int prevY = y - dy;
-				//if previous stone is on board and same team, ignoring it
-				if (prevX >= 0 && prevX < 19 && prevY >= 0 && prevY < 19) {
-					if (board.getStone(prevX, prevY) == currentStone) {
-						continue;
-					}
-				}
-				
+				bool prevInBoard = (prevX >= 0 && prevX < 19
+									&& prevY >= 0 && prevY < 19);
+				//start of an alignment only: skip mid-runs to avoid double counting
+				if (prevInBoard && board.getStone(prevX, prevY) == currentStone)
+					continue;
+
 				int count = 1;
 				int openEnds = 0;
-				
-				//looking backward to see if it's empty
-				if (prevX >= 0 && prevX < 19 && prevY >= 0 && prevY < 19) {
-					if (board.getStone(prevX, prevY) == EMPTY) {
-						openEnds++;
-					}
-				}
-				
-				//counting stones forward
+				if (prevInBoard && board.getStone(prevX, prevY) == EMPTY)
+					openEnds++;
+
 				int nx = x + dx;
 				int ny = y + dy;
-				while (nx >= 0 && nx < 19 && ny >= 0 && ny < 19 && board.getStone(nx, ny) == currentStone) {
+				while (nx >= 0 && nx < 19 && ny >= 0 && ny < 19
+					&& board.getStone(nx, ny) == currentStone) {
 					count++;
 					nx += dx;
 					ny += dy;
 				}
-				
-				//searching open end forward
-				if (nx >= 0 && nx < 19 && ny >= 0 && ny < 19) {
-					if (board.getStone(nx, ny) == EMPTY) {
-						openEnds++;
+				bool nextInBoard = (nx >= 0 && nx < 19 && ny >= 0 && ny < 19);
+				if (nextInBoard && board.getStone(nx, ny) == EMPTY)
+					openEnds++;
+
+				//alignment scoring + fork tally are gated on developable space:
+				//an alignment that cannot reach 5 contributes zero offensive value
+				bool canReachFive = (count >= 5
+					|| this->_developableSpace(board, x, y, dx, dy, count) >= 5);
+				if (canReachFive) {
+					totalScore += this->_evaluateLine(count, openEnds, isAi);
+					if (count == 3 && openEnds == 2) {
+						if (isAi) aiOpenThree++; else oppOpenThree++;
+					} else if (count == 4 && openEnds >= 1) {
+						if (isAi) aiFour++; else oppFour++;
 					}
 				}
-				
-				totalScore += this->_evaluateLine(count, openEnds, isAi);
+
+				//vulnerable-pair detection runs regardless of developable space:
+				//a capturable pair is a real material liability whether or not
+				//the alignment could ever extend to 5-in-a-row
+				if (count == 2 && prevInBoard && nextInBoard) {
+					e_stone before = board.getStone(prevX, prevY);
+					e_stone after  = board.getStone(nx, ny);
+					if ((before == opp && after == EMPTY)
+						|| (before == EMPTY && after == opp)) {
+						if (isAi) aiVulnerable++; else oppVulnerable++;
+					}
+				}
 			}
 		}
 	}
-	//adding captures score
+
+	//actual captures
 	totalScore += (board.getCaptures(this->_aiTeam) * 2000);
 	totalScore -= (board.getCaptures(this->_opponentTeam) * 2000);
 
+	//potential captures (valued below an actual capture: threat may not fire)
+	totalScore -= aiVulnerable * 800;
+	totalScore += oppVulnerable * 800;
+
+	//combinations: a four with any other threat is unblockable in one move;
+	//a double open-three forces a defensive concession
+	if (aiFour >= 1 && (aiFour + aiOpenThree) >= 2)
+		totalScore += 50000;
+	else if (aiOpenThree >= 2)
+		totalScore += 8000;
+	if (oppFour >= 1 && (oppFour + oppOpenThree) >= 2)
+		totalScore -= 50000;
+	else if (oppOpenThree >= 2)
+		totalScore -= 8000;
+
 	return totalScore;
+}
+
+//walks both sides of an alignment along (dx, dy) counting consecutive empty
+//cells until a wall, a same-color stone, or an opponent stone blocks further
+//extension; the returned span is an upper bound on the future length of this
+//alignment along this axis
+int AI::_developableSpace(const Board &board, int x, int y,
+							int dx, int dy, int count) const {
+	int spaceBefore = 0;
+	int bx = x - dx;
+	int by = y - dy;
+	while (bx >= 0 && bx < 19 && by >= 0 && by < 19
+		&& board.getStone(bx, by) == EMPTY) {
+		spaceBefore++;
+		bx -= dx;
+		by -= dy;
+	}
+	int spaceAfter = 0;
+	int fx = x + dx * count;
+	int fy = y + dy * count;
+	while (fx >= 0 && fx < 19 && fy >= 0 && fy < 19
+		&& board.getStone(fx, fy) == EMPTY) {
+		spaceAfter++;
+		fx += dx;
+		fy += dy;
+	}
+	return count + spaceBefore + spaceAfter;
+}
+
+//returns the number of vulnerable pairs that placing `stone` at (x, y) would
+//create on `board`; only inspects the 8 axis half-lines around the placement
+//site (constant work) so move ordering stays cheap
+int AI::_createsVulnerablePair(const Board &board, int x, int y,
+								e_stone stone) const {
+	e_stone opp = (stone == BLACK) ? WHITE : BLACK;
+	int directions[4][2] = {{1, 0}, {0, 1}, {1, 1}, {1, -1}};
+	int created = 0;
+
+	for (int d = 0; d < 4; ++d) {
+		int dx = directions[d][0];
+		int dy = directions[d][1];
+
+		//orientation A: placed is the back end of the pair, partner forward
+		//  pair = (x, y) + (x+dx, y+dy)
+		//  brackets = (x-dx, y-dy) and (x+2dx, y+2dy)
+		{
+			int fx = x + dx,   fy = y + dy;
+			int bx = x - dx,   by = y - dy;
+			int ax = x + 2*dx, ay = y + 2*dy;
+			if (fx >= 0 && fx < 19 && fy >= 0 && fy < 19
+				&& bx >= 0 && bx < 19 && by >= 0 && by < 19
+				&& ax >= 0 && ax < 19 && ay >= 0 && ay < 19
+				&& board.getStone(fx, fy) == stone
+				&& board.getStone(bx, by) != stone   //pair must be length 2
+				&& board.getStone(ax, ay) != stone) {
+				e_stone before = board.getStone(bx, by);
+				e_stone after  = board.getStone(ax, ay);
+				if ((before == opp && after == EMPTY)
+					|| (before == EMPTY && after == opp))
+					created++;
+			}
+		}
+		//orientation B: placed is the front end of the pair, partner backward
+		//  pair = (x-dx, y-dy) + (x, y)
+		//  brackets = (x-2dx, y-2dy) and (x+dx, y+dy)
+		{
+			int bx  = x - dx,   by  = y - dy;
+			int ax  = x + dx,   ay  = y + dy;
+			int b2x = x - 2*dx, b2y = y - 2*dy;
+			if (bx  >= 0 && bx  < 19 && by  >= 0 && by  < 19
+				&& ax  >= 0 && ax  < 19 && ay  >= 0 && ay  < 19
+				&& b2x >= 0 && b2x < 19 && b2y >= 0 && b2y < 19
+				&& board.getStone(bx, by)   == stone
+				&& board.getStone(ax, ay)   != stone   //pair must be length 2
+				&& board.getStone(b2x, b2y) != stone) {
+				e_stone before = board.getStone(b2x, b2y);
+				e_stone after  = board.getStone(ax, ay);
+				if ((before == opp && after == EMPTY)
+					|| (before == EMPTY && after == opp))
+					created++;
+			}
+		}
+	}
+	return created;
 }
 
 //checks if an empty cell has neighbor at a given distance
@@ -786,6 +906,10 @@ int AI::_evaluateMoveScore(const Board &board, int x, int y) const {
 		score += 10000;
 	if (board.willCapture(x, y, this->_opponentTeam))
 		score += 9000;
+
+	//penalty for creating own vulnerable pair: opponent could capture next ply
+	//mirrors the -800 per pair that the heuristic applies after the move
+	score -= this->_createsVulnerablePair(board, x, y, this->_aiTeam) * 7000;
 
 	//alignements and threats
 	//scanning 4 axes

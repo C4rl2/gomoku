@@ -66,6 +66,15 @@ class AI {
 
 		int					_evaluateBoard(const Board &board) const;
 		int					_evaluateLine(int count, int openEnds, bool isAi) const;
+		//returns count + adjacent empty cells in both directions of the axis;
+		//if the result is < 5, the alignment can never extend to a 5-in-a-row
+		int					_developableSpace(const Board &board, int x, int y,
+											int dx, int dy, int count) const;
+		//returns the number of vulnerable pairs that placing `stone` at (x, y)
+		//would create on `board`; used by move ordering to discourage moves
+		//that hand the opponent a free capture next ply
+		int					_createsVulnerablePair(const Board &board, int x, int y,
+											e_stone stone) const;
 		bool				_hasNeighbor(const Board &board, int x, int y, int distance) const;
 		std::vector<Move>	_generateMoves(const Board &board) const;
 		int					_minimax(Board board, int depth, int alpha, int beta,
