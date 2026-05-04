@@ -11,6 +11,9 @@
 
 <body>
   <div class="header">
+    <button class="brand-mark" type="button" onclick="location.reload()" aria-label="Back to menu">
+      <span class="brand-mark__text">Gomoku</span>
+    </button>
     <div class="theme-switch-wrapper">
       <input type="checkbox" id="theme-toggle" aria-label="Toggle Dark/Light Mode" />
       <div class="toggle-switch" aria-hidden="true">
@@ -36,14 +39,65 @@
 
   <div id="content">
     <div id="setup" class="neo-sunken">
-      <h2>Gomoku</h2>
-      <fieldset class="mode-select">
-        <legend>Game mode</legend>
-        <label><input type="radio" name="mode" value="0" checked /> Human vs AI</label>
-        <label><input type="radio" name="mode" value="1" /> Human vs Human</label>
-        <label><input type="radio" name="mode" value="2" /> Human vs Human (AI suggestion)</label>
+      <div class="setup-header">
+        <span class="panel-kicker">New match</span>
+        <h1>Choose game mode</h1>
+      </div>
+      <fieldset class="mode-select" aria-label="Game mode">
+        <label class="mode-card">
+          <input type="radio" name="mode" value="0" checked />
+          <span class="mode-card__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none">
+              <circle cx="8" cy="8" r="3" stroke="currentColor" stroke-width="2"/>
+              <path d="M4 20a4 4 0 0 1 8 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <path d="M16 6h4v4M20 6l-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="17" cy="17" r="2.5" stroke="currentColor" stroke-width="2"/>
+            </svg>
+          </span>
+          <span class="mode-card__text">Human vs AI</span>
+        </label>
+        <label class="mode-card">
+          <input type="radio" name="mode" value="1" />
+          <span class="mode-card__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none">
+              <circle cx="7.5" cy="8" r="3" stroke="currentColor" stroke-width="2"/>
+              <circle cx="16.5" cy="8" r="3" stroke="currentColor" stroke-width="2"/>
+              <path d="M3.5 20a4 4 0 0 1 8 0M12.5 20a4 4 0 0 1 8 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </span>
+          <span class="mode-card__text">Human vs Human</span>
+        </label>
+        <label class="mode-card">
+          <input type="radio" name="mode" value="2" />
+          <span class="mode-card__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none">
+              <rect x="4" y="5" width="16" height="12" rx="3" stroke="currentColor" stroke-width="2"/>
+              <path d="M9 2v3M15 2v3M8 21h8M12 17v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <circle cx="9" cy="11" r="1.2" fill="currentColor"/>
+              <circle cx="15" cy="11" r="1.2" fill="currentColor"/>
+            </svg>
+          </span>
+          <span class="mode-card__text">AI vs AI</span>
+        </label>
       </fieldset>
-      <label>AI depth (1-10): <input id="depth" type="number" min="1" max="10" value="5" /></label>
+      <label class="hint-start-option">
+        <input id="hint-toggle" type="checkbox" />
+        <span class="mode-card__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M9 18h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <path d="M10 22h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <path d="M8.3 14.8a6 6 0 1 1 7.4 0c-.7.5-1.1 1.2-1.2 2H9.5c-.1-.8-.5-1.5-1.2-2z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+          </svg>
+        </span>
+        <span class="mode-card__text">Enable hints</span>
+      </label>
+      <div class="depth-control">
+        <div class="depth-control__header">
+          <span class="panel-kicker">AI depth</span>
+          <output id="depth-value" for="depth">5</output>
+        </div>
+        <input id="depth" type="range" min="1" max="10" value="5" />
+      </div>
       <button id="start-btn" onclick="startGame()" disabled>Loading...</button>
     </div>
   </div>
@@ -51,16 +105,69 @@
   <div id="game" style="display:none">
     <aside class="game-sidebar game-sidebar--left">
       <div class="sidebar-card">
-        <h3>AI debug</h3>
-        <p>Iterative deepening: <span id="dbg-id">-</span> ms</p>
-        <p>Heuristic eval: <span id="dbg-eval">-</span> ms</p>
-        <p>Move ordering: <span id="dbg-order">-</span> ms</p>
-        <p>Zobrist hashing: <span id="dbg-zobrist">-</span> ms</p>
-        <p>Transposition table: <span id="dbg-tt">-</span> ms</p>
-        <p>Minimax core: <span id="dbg-mm">-</span> ms</p>
-        <p>Alpha-beta cutoffs: <span id="dbg-cutoffs">-</span></p>
-        <p>TT hits: <span id="dbg-tthits">-</span></p>
-        <p>Explored nodes: <span id="dbg-nodes">-</span></p>
+        <div class="panel-header">
+          <div>
+            <span class="panel-kicker">Match</span>
+          </div>
+        </div>
+        <div class="players-row">
+          <div class="player-card" id="player-card-1">
+            <div class="player-stone player-stone--blue"></div>
+            <span class="player-name">Blue</span>
+            <svg class="lives-svg" id="lives-1" viewBox="0 0 90 14" aria-label="Blue remaining lives">
+              <circle class="life life--blue" cx="9"  cy="7" r="6.5"/>
+              <circle class="life life--blue" cx="27" cy="7" r="6.5"/>
+              <circle class="life life--blue" cx="45" cy="7" r="6.5"/>
+              <circle class="life life--blue" cx="63" cy="7" r="6.5"/>
+              <circle class="life life--blue" cx="81" cy="7" r="6.5"/>
+            </svg>
+            <span class="player-captures"><span id="cap-black">0</span> caps</span>
+          </div>
+          <div class="player-card" id="player-card-2">
+            <div class="player-stone player-stone--pink"></div>
+            <span class="player-name">Pink</span>
+            <svg class="lives-svg" id="lives-2" viewBox="0 0 90 14" aria-label="Pink remaining lives">
+              <circle class="life life--pink" cx="9"  cy="7" r="6.5"/>
+              <circle class="life life--pink" cx="27" cy="7" r="6.5"/>
+              <circle class="life life--pink" cx="45" cy="7" r="6.5"/>
+              <circle class="life life--pink" cx="63" cy="7" r="6.5"/>
+              <circle class="life life--pink" cx="81" cy="7" r="6.5"/>
+            </svg>
+            <span class="player-captures"><span id="cap-white">0</span> caps</span>
+          </div>
+        </div>
+        <p id="status" class="status-msg"></p>
+        <div class="ai-section">
+          <div class="ai-row">
+            <span class="ai-label">Time</span>
+            <code class="ai-value" id="ai-time">—</code>
+          </div>
+          <div class="ai-row">
+            <span class="ai-label">Depth</span>
+            <code class="ai-value" id="ai-depth-num">—</code>
+          </div>
+          <div class="depth-track">
+            <div class="depth-fill" id="ai-depth-fill"></div>
+          </div>
+        </div>
+        <p id="suggestion"></p>
+        <div class="game-actions" aria-label="Game actions">
+          <button id="hint-btn" class="game-action-btn" onclick="onHintClick()" aria-label="Show hint for current move">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M9 18h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <path d="M10 22h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <path d="M8.3 14.8a6 6 0 1 1 7.4 0c-.7.5-1.1 1.2-1.2 2H9.5c-.1-.8-.5-1.5-1.2-2z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+            </svg>
+            <span>Hint</span>
+          </button>
+          <button class="game-action-btn game-action-btn--accent" onclick="location.reload()" aria-label="Start a new game">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <rect x="5" y="5" width="14" height="14" rx="3" stroke="currentColor" stroke-width="2"/>
+              <path d="M12 8v8M8 12h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            <span>New game</span>
+          </button>
+        </div>
       </div>
     </aside>
 
@@ -76,24 +183,106 @@
     </section>
 
     <aside class="game-sidebar game-sidebar--right">
-      <div class="sidebar-card">
-        <h3>Game panel</h3>
-        <p id="status"></p>
-        <p>Blue captures: <span id="cap-black">0</span> &nbsp; Pink captures: <span id="cap-white">0</span></p>
-        <p id="ai-time"></p>
-		<p id="ai-depth"></p>
-		<p id="suggestion"></p>
+      <div class="sidebar-card ai-debug-card">
+        <div class="panel-header debug-header">
+          <div>
+            <span class="panel-kicker">Telemetry</span>
+          </div>
+          <strong class="debug-total"><span id="dbg-id">-</span><small>ms</small></strong>
+        </div>
+        <div class="debug-bars">
+          <div class="debug-bar-row">
+            <span>Minimax</span>
+            <code><span id="dbg-mm">-</span> ms</code>
+            <div class="debug-bar"><span id="dbg-mm-bar"></span></div>
+          </div>
+          <div class="debug-bar-row">
+            <span>Heuristic</span>
+            <code><span id="dbg-eval">-</span> ms</code>
+            <div class="debug-bar"><span id="dbg-eval-bar"></span></div>
+          </div>
+          <div class="debug-bar-row">
+            <span>Ordering</span>
+            <code><span id="dbg-order">-</span> ms</code>
+            <div class="debug-bar"><span id="dbg-order-bar"></span></div>
+          </div>
+          <div class="debug-bar-row">
+            <span>Zobrist</span>
+            <code><span id="dbg-zobrist">-</span> ms</code>
+            <div class="debug-bar"><span id="dbg-zobrist-bar"></span></div>
+          </div>
+          <div class="debug-bar-row">
+            <span>Transposition</span>
+            <code><span id="dbg-tt">-</span> ms</code>
+            <div class="debug-bar"><span id="dbg-tt-bar"></span></div>
+          </div>
+          <div class="debug-foot">
+            <span>Nodes <code id="dbg-nodes">-</code></span>
+            <span>Cutoffs <code id="dbg-cutoffs">-</code></span>
+            <span>TT hits <code id="dbg-tthits">-</code></span>
+          </div>
+        </div>
       </div>
-      <div class="sidebar-card sidebar-card--actions">
-        <button id="undo-btn" onclick="onUndoClick()">Undo</button>
-        <button onclick="location.reload()">New game</button>
+      <div class="sidebar-card sidebar-card--history">
+        <div class="history-section">
+          <div class="panel-header history-header">
+            <div>
+              <span class="panel-kicker">Timeline</span>
+            </div>
+            <button id="history-latest-btn" class="history-latest-btn" type="button" onclick="gotoLatestHistory()">Latest</button>
+          </div>
+          <div id="move-history" class="move-history-list" onmouseleave="restoreHistoryPreview()"></div>
+        </div>
+        <button id="undo-btn" class="game-action-btn history-undo-btn" onclick="onUndoClick()" aria-label="Undo last move" disabled>
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M7 7h7a6 6 0 1 1-5.2 9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <path d="M7 7l4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M7 7l4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span>Undo</span>
+        </button>
       </div>
     </aside>
+  </div>
+
+  <div id="win-modal" class="win-modal" hidden>
+    <div class="win-modal__backdrop" onclick="closeWinModal()" aria-hidden="true"></div>
+    <section class="win-dialog" role="dialog" aria-modal="true" aria-labelledby="win-title">
+      <button class="win-dialog__close" type="button" onclick="closeWinModal()" aria-label="Review board">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </button>
+      <div class="win-burst" aria-hidden="true">
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+      <div id="win-stone" class="win-stone"></div>
+      <p id="win-kicker" class="win-kicker">Game over</p>
+      <h2 id="win-title">Blue wins!</h2>
+      <p id="win-message" class="win-message">Clean line, clean finish.</p>
+      <button class="win-new-game-btn" type="button" onclick="location.reload()">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <rect x="5" y="5" width="14" height="14" rx="3" stroke="currentColor" stroke-width="2"/>
+          <path d="M12 8v8M8 12h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <span>New game</span>
+      </button>
+    </section>
   </div>
 
   <script src="gomoku.js"></script>
   <script src="js/bridge.js"></script>
   <script src="js/render.js"></script>
+  <script src="js/state.js"></script>
+  <script src="js/setup.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/history.js"></script>
+  <script src="js/endgame.js"></script>
   <script src="js/app.js"></script>
 </body>
 

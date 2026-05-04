@@ -85,6 +85,27 @@ var Render = (function() {
     }
   }
 
+  function clearWinHighlights() {
+    if (!boardEl) return;
+    var highlighted = boardEl.querySelectorAll(".neo-cell--winning");
+    for (var i = 0; i < highlighted.length; i++) {
+      highlighted[i].classList.remove("neo-cell--winning");
+    }
+  }
+
+  function winningLine(line) {
+    clearWinHighlights();
+    if (!line || !cells.length) return;
+    for (var i = 0; i < line.length; i++) {
+      (function(cellInfo, delay) {
+        setTimeout(function() {
+          var idx = cellInfo.y * 19 + cellInfo.x;
+          if (cells[idx]) cells[idx].classList.add("neo-cell--winning");
+        }, delay);
+      })(line[i], i * 260);
+    }
+  }
+
   function cellFromClick(evt) {
     var cell = evt.target.closest(".neo-cell");
     if (!cell) return null;
@@ -112,7 +133,8 @@ var Render = (function() {
     marker.style.width          = "60%";
     marker.style.height         = "60%";
     marker.style.borderRadius   = "50%";
-    marker.style.border         = "2px dashed rgba(255, 90, 90, 0.85)";
+    marker.style.border         = "2px dashed var(--ui-accent)";
+    marker.style.boxShadow      = "0 0 12px var(--ui-accent-muted)";
     marker.style.boxSizing      = "border-box";
     marker.style.pointerEvents  = "none";
     target.style.position = target.style.position || "relative";
@@ -123,7 +145,8 @@ var Render = (function() {
     init:          init,
     board:         board,
     cellFromClick: cellFromClick,
-    suggestion:    suggestion
+    suggestion:    suggestion,
+    winningLine:   winningLine,
+    clearWinHighlights: clearWinHighlights
   };
 })();
-
