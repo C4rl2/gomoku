@@ -13,6 +13,8 @@ This version implements the **Pro / Renju-inspired ruleset** used in the 42 scho
 - **Double-three rule** : a move that simultaneously creates two free three-in-a-rows is forbidden, *unless* that move also performs a capture.
 - **Breakable five** : an alignment of five can still be broken on the next turn if one of its stones can be captured. The game only ends once a five-in-a-row survives the opponent's reply.
 
+<img width="1919" height="905" alt="Web Page Screenshot" src="https://github.com/user-attachments/assets/970a005e-48b7-4191-ba8a-91d4dbdb830d" />
+
 ## The project in one picture
 
 ```
@@ -42,6 +44,8 @@ Three layers, one game loop:
 | Build system | **Makefile** orchestrating Docker, Emscripten, and the dev server          |
 
 ## How the AI works
+
+<img width="688" height="283" alt="minimax-alpha-beta" src="https://github.com/user-attachments/assets/1d850b90-da6b-4079-9575-e0f6b7829435" />
 
 The opponent is a classic **minimax search with alpha-beta pruning**, hardened with several techniques to make it strong within a strict per-move time budget (500 ms):
 
@@ -77,8 +81,8 @@ Makefile              Build, run, clean targets
 
 You only need two tools on your machine — everything else (the C++ toolchain, Emscripten, etc.) is fetched and run inside Docker.
 
-- **Docker**
-- **Python 3**
+- **Docker**  ![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=flat&logo=docker&logoColor=white)
+- **Python 3**  ![Python](https://img.shields.io/badge/Python-3776AB?style=flat&logo=python&logoColor=white)
 
 ### Run
 
