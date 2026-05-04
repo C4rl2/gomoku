@@ -34,7 +34,7 @@ Three layers, one game loop:
 | Layer        | Technology                                                                 |
 |--------------|----------------------------------------------------------------------------|
 | Game engine  | **C++98**, compiled with `-Wall -Wextra -Werror`                          |
-| AI           | Hand-rolled **minimax** with α-β pruning, iterative deepening, transposition table, Zobrist hashing, aspiration windows |
+| AI           | Hand-rolled **minimax** with α-β pruning, iterative deepening, transposition table, Zobrist hashing |
 | Compilation  | **Emscripten** (`emscripten/emsdk:3.1.74`) targeting **WebAssembly**       |
 | Build env    | **Docker** (`linux/amd64`) — fully reproducible, no host toolchain needed |
 | Frontend     | **Vanilla JavaScript**, HTML5 **Canvas**, no framework, no bundler        |
@@ -49,7 +49,6 @@ The opponent is a classic **minimax search with alpha-beta pruning**, hardened w
 - **Transposition table** — a fixed-size hash table (1,048,576 entries, power-of-two for fast masking) caches previously evaluated positions with `EXACT` / `LOWER` / `UPPER` bound flags.
 - **Zobrist hashing** — each `(x, y, color)` triple has a random 64-bit key, XORed in/out as stones are placed and captured. Captures update the hash incrementally to mirror the engine's actual capture logic exactly.
 - **Move ordering** — candidate moves are scored by a fast heuristic (alignments, captures, threats) and explored best-first to maximize α-β cutoffs.
-- **Aspiration windows** — the search starts with a narrow window (`±50`) around the previous score and only widens on fail-high / fail-low, saving nodes in stable positions.
 - **Heuristic evaluation** — a positional score combining open/closed twos, threes, fours, captured stones, and threat patterns.
 
 The UI surfaces both the **AI's thinking time** and the **actual depth reached** at each move, so you can see iterative deepening at work.
