@@ -8,6 +8,7 @@
 
 static Game   g_game;
 static int    g_board_buf[19 * 19];
+static int    g_history_board_buf[19 * 19];
 static double g_last_ai_time      = 0.0;
 static double g_last_suggest_time = 0.0;
 static int    g_suggested_x       = -1;
@@ -17,15 +18,23 @@ extern "C" {
 	EMSCRIPTEN_KEEPALIVE void	game_init(int depth, int mode) { g_game.init(depth, mode); g_suggested_x = -1; g_suggested_y = -1; g_last_suggest_time = 0.0; }
 	EMSCRIPTEN_KEEPALIVE int	place_stone(int x, int y) { return g_game.placeStone(x, y); }
 	EMSCRIPTEN_KEEPALIVE int	undo_move()               { return g_game.undoMove(); }
+	EMSCRIPTEN_KEEPALIVE int	redo_move()               { return g_game.redoMove(); }
+	EMSCRIPTEN_KEEPALIVE int	goto_history(int index)   { return g_game.gotoHistory(index); }
 	EMSCRIPTEN_KEEPALIVE int	ai_play()                 { return g_game.aiPlay(g_last_ai_time); }
 	EMSCRIPTEN_KEEPALIVE double	get_last_ai_time()        { return g_last_ai_time; }
 	EMSCRIPTEN_KEEPALIVE int*	get_board()               { g_game.getBoard(g_board_buf); return g_board_buf; }
+	EMSCRIPTEN_KEEPALIVE int*	get_history_board(int index) { g_game.getHistoryBoard(index, g_history_board_buf); return g_history_board_buf; }
 	EMSCRIPTEN_KEEPALIVE int	get_current_player()      { return g_game.getCurrentPlayer(); }
 	EMSCRIPTEN_KEEPALIVE int	get_captures(int player)  { return g_game.getCaptures(player); }
 	EMSCRIPTEN_KEEPALIVE int	is_game_over()            { return g_game.isGameOver() ? 1 : 0; }
 	EMSCRIPTEN_KEEPALIVE int	get_winner()              { return g_game.getWinner(); }
 	EMSCRIPTEN_KEEPALIVE int	get_last_depth()          { return g_game.getLastDepth(); }
 	EMSCRIPTEN_KEEPALIVE int	get_game_mode()           { return g_game.getGameMode(); }
+	EMSCRIPTEN_KEEPALIVE int	get_history_length()      { return g_game.getHistoryLength(); }
+	EMSCRIPTEN_KEEPALIVE int	get_history_index()       { return g_game.getHistoryIndex(); }
+	EMSCRIPTEN_KEEPALIVE int	get_history_move_x(int index) { return g_game.getHistoryMoveX(index); }
+	EMSCRIPTEN_KEEPALIVE int	get_history_move_y(int index) { return g_game.getHistoryMoveY(index); }
+	EMSCRIPTEN_KEEPALIVE int	get_history_move_player(int index) { return g_game.getHistoryMovePlayer(index); }
 
 	//runs the full ai pipeline for the current player without applying the move
 	//returns y * 19 + x on success, -1 if no suggestion (game over or wrong mode)

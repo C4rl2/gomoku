@@ -1,7 +1,9 @@
 #include "Game.hpp"
 #include <ctime>
 
-Game::Game() : _ai(WHITE), _currentPlayer(BLACK), _gameOver(false), _winner(0), _gameMode(MODE_AI) {}
+Game::Game()
+	: _ai(WHITE), _currentPlayer(BLACK), _gameOver(false), _winner(0),
+	_gameMode(MODE_AI), _historyIndex(0) {}
 
 Game::Game(const Game &other) {
 	*this = other;
@@ -16,6 +18,7 @@ Game &Game::operator=(const Game &other) {
 		this->_winner        = other._winner;
 		this->_gameMode      = other._gameMode;
 		this->_history       = other._history;
+		this->_historyIndex  = other._historyIndex;
 	}
 	return *this;
 }
@@ -39,18 +42,41 @@ void Game::init(int depth, int mode) {
 	this->_winner        = 0;
 	this->_gameMode      = (e_game_mode)mode;
 	this->_history.clear();
+	this->_historyIndex  = 0;
+	this->_saveHistoryState(-1, -1, EMPTY);
+}
+
+void Game::_saveHistoryState(int moveX, int moveY, e_stone playedStone) {
+	if (this->_historyIndex + 1 < (int)this->_history.size())
+		this->_history.erase(this->_history.begin() + this->_historyIndex + 1, this->_history.end());
+	this->_history.push_back(MoveRecord(
+		this->_board,
+		this->_currentPlayer,
+		this->_gameOver,
+		this->_winner,
+		moveX,
+		moveY,
+		playedStone
+	));
+	this->_historyIndex = (int)this->_history.size() - 1;
+}
+
+void Game::_restoreHistoryState(int index) {
+	const MoveRecord &rec = this->_history[index];
+	this->_board         = rec._board;
+	this->_currentPlayer = rec._currentPlayer;
+	this->_gameOver      = rec._gameOver;
+	this->_winner        = rec._winner;
+	this->_historyIndex  = index;
 }
 
 // Extracted from the setStone block inside run()'s while loop.
 // Shared by placeStone() and aiPlay() to avoid duplication.
 int Game::_applyMove(int x, int y) {
-	MoveRecord rec(this->_board, this->_currentPlayer, this->_gameOver, this->_winner);
+	e_stone playedStone = this->_currentPlayer;
 
 	if (!this->_board.setStone(x, y, this->_currentPlayer))
 		return -1;
-
-	//commit pre-move snapshot only after the move is known legal
-	this->_history.push_back(rec);
 
 	this->_board.executeCaptures(x, y, this->_currentPlayer);
 
@@ -59,6 +85,7 @@ int Game::_applyMove(int x, int y) {
 	if (this->_board.hasFive(opponent)) {
 		this->_gameOver = true;
 		this->_winner   = (int)opponent;
+		this->_saveHistoryState(x, y, playedStone);
 		return 0;
 	}
 
@@ -68,10 +95,12 @@ int Game::_applyMove(int x, int y) {
 	if (winState == WIN || winByCapture) {
 		this->_gameOver = true;
 		this->_winner   = (int)this->_currentPlayer;
+		this->_saveHistoryState(x, y, playedStone);
 		return 0;
 	}
 
 	this->_switchPlayer();
+	this->_saveHistoryState(x, y, playedStone);
 	if (winState == BREAKABLE_FIVE)
 		return 2; // game continues, opponent can still break the alignment
 	return 0;
@@ -90,27 +119,35 @@ int Game::placeStone(int x, int y) {
 	return this->_applyMove(x, y);
 }
 
-//restores the state saved before the last successful move
-//covers grid, capture counters, current player, game-over and winner
+//moves the current state cursor one snapshot backward without destroying history
 int Game::undoMove() {
-	if (this->_history.empty())
+	if (this->_historyIndex <= 0)
 		return -1;
+	this->_restoreHistoryState(this->_historyIndex - 1);
+	return 0;
+}
 
-	const MoveRecord &rec = this->_history.back();
-	this->_board         = rec._board;
-	this->_currentPlayer = rec._currentPlayer;
-	this->_gameOver      = rec._gameOver;
-	this->_winner        = rec._winner;
-	this->_history.pop_back();
+int Game::redoMove() {
+	if (this->_historyIndex + 1 >= (int)this->_history.size())
+		return -1;
+	this->_restoreHistoryState(this->_historyIndex + 1);
+	return 0;
+}
+
+int Game::gotoHistory(int index) {
+	if (index < 0 || index >= (int)this->_history.size())
+		return -1;
+	this->_restoreHistoryState(index);
 	return 0;
 }
 
 // Replaces the AI block from run(). timeSpent is displayed by the frontend
 // (the subject requires showing the AI computation time).
 int Game::aiPlay(double &timeSpent) {
-	if (this->_gameOver || this->_gameMode != MODE_AI)
+	if (this->_gameOver || (this->_gameMode != MODE_AI && this->_gameMode != MODE_AI_V_AI))
 		return -3;
 
+	this->_ai.setAiTeam(this->_currentPlayer);
 	clock_t start  = clock();
 	Move    aiMove = this->_ai.getBestMove(this->_board);
 	clock_t end    = clock();
@@ -131,7 +168,7 @@ int Game::aiPlay(double &timeSpent) {
 Move Game::suggestMove(double &timeSpent) {
 	Move none = {-1, -1, 0};
 	timeSpent = 0.0;
-	if (this->_gameOver || this->_gameMode != MODE_HVH_SUGGEST)
+	if (this->_gameOver)
 		return none;
 
 	//rebind ai team to the current player so minimax maximises for them
@@ -178,6 +215,41 @@ int Game::getLastDepth() const {
 
 int Game::getGameMode() const {
 	return (int)this->_gameMode;
+}
+
+int Game::getHistoryLength() const {
+	return (int)this->_history.size();
+}
+
+int Game::getHistoryIndex() const {
+	return this->_historyIndex;
+}
+
+int Game::getHistoryMoveX(int index) const {
+	if (index <= 0 || index >= (int)this->_history.size())
+		return -1;
+	return this->_history[index]._moveX;
+}
+
+int Game::getHistoryMoveY(int index) const {
+	if (index <= 0 || index >= (int)this->_history.size())
+		return -1;
+	return this->_history[index]._moveY;
+}
+
+int Game::getHistoryMovePlayer(int index) const {
+	if (index <= 0 || index >= (int)this->_history.size())
+		return 0;
+	return (int)this->_history[index]._playedStone;
+}
+
+void Game::getHistoryBoard(int index, int *out) const {
+	const Board *board = &this->_board;
+	if (index >= 0 && index < (int)this->_history.size())
+		board = &this->_history[index]._board;
+	for (int y = 0; y < 19; ++y)
+		for (int x = 0; x < 19; ++x)
+			out[y * 19 + x] = (int)board->getStone(x, y);
 }
 
 //forward instrumentation getters for the frontend debug panel

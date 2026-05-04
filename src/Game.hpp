@@ -10,7 +10,7 @@
 enum e_game_mode {
 	MODE_AI          = 0, //human BLACK vs ai WHITE
 	MODE_HVH         = 1, //human vs human, rules only
-	MODE_HVH_SUGGEST = 2  //human vs human with ai suggestion per turn
+	MODE_AI_V_AI     = 2  //ai BLACK vs ai WHITE
 };
 
 // Replaced the original blocking run() loop with event-driven methods
@@ -24,9 +24,12 @@ class Game {
 		int			_winner; // 0=none, 1=BLACK, 2=WHITE, 3=draw
 		e_game_mode	_gameMode;
 		std::vector<MoveRecord>	_history;
+		int			_historyIndex;
 
 		void	_switchPlayer();
 		int		_applyMove(int x, int y);
+		void	_saveHistoryState(int moveX, int moveY, e_stone playedStone);
+		void	_restoreHistoryState(int index);
 
 	public:
 		Game();
@@ -42,11 +45,13 @@ class Game {
 		//restores the state saved before the last successful move
 		//returns: 0=ok, -1=history empty
 		int		undoMove();
+		int		redoMove();
+		int		gotoHistory(int index);
 		// Replaces the AI block in run() — computes best move and applies it.
 		// Returns: 0=ok, -1=draw (board full), -3=game already over (or non-AI mode)
 		int		aiPlay(double &timeSpent);
 		//computes a move via the full ai pipeline without applying it
-		//returns Move{-1,-1,0} if game over or mode != MODE_HVH_SUGGEST
+		//returns Move{-1,-1,0} if game over
 		Move	suggestMove(double &timeSpent);
 		// Serializes the board to a flat int[361] array for the JS canvas renderer.
 		void	getBoard(int *out) const;
@@ -57,6 +62,12 @@ class Game {
 		int		getDepth() const;
 		int		getLastDepth() const;
 		int		getGameMode() const;
+		int		getHistoryLength() const;
+		int		getHistoryIndex() const;
+		int		getHistoryMoveX(int index) const;
+		int		getHistoryMoveY(int index) const;
+		int		getHistoryMovePlayer(int index) const;
+		void	getHistoryBoard(int index, int *out) const;
 
 		//ai per-move instrumentation forwarded from the underlying AI instance
 		int		getLastNodes() const;
