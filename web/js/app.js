@@ -1,6 +1,7 @@
 var aiThinking = false;
 var currentMode = 0;
 var currentSuggestion = null;
+var moveHistory = [];
 
 var MODE_AI = 0;
 var MODE_HVH = 1;
@@ -21,7 +22,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     if (document.getElementById('board') && document.getElementById('game').style.display !== 'none' && Bridge.getBoard) {
-      Render.board(Bridge.getBoard());
+      Render.board(Bridge.getBoard(), moveHistory);
     }
   });
 });
@@ -35,6 +36,7 @@ function startGame() {
   var modeRadio = document.querySelector('input[name="mode"]:checked');
   currentMode = modeRadio ? parseInt(modeRadio.value, 10) : 0;
   currentSuggestion = null;
+  moveHistory = [];
   Bridge.gameInit(depth, currentMode);
 
   document.getElementById('content').style.display = 'none';
@@ -45,7 +47,7 @@ function startGame() {
   Render.init(canvas);
   canvas.addEventListener('click', onCanvasClick);
 
-  Render.board(Bridge.getBoard());
+  Render.board(Bridge.getBoard(), moveHistory);
   setStatus('Blue to play');
 
   if (currentMode === MODE_HVH_SUGGEST)
@@ -64,9 +66,10 @@ function onCanvasClick(evt) {
   if (result === -1) { setStatus('Invalid move'); return; }
   if (result === -2) { setStatus('Double-three forbidden!'); return; }
 
+  moveHistory.push({ x: cell.x, y: cell.y });
   //a successful move invalidates the previous suggestion
   currentSuggestion = null;
-  Render.board(Bridge.getBoard());
+  Render.board(Bridge.getBoard(), moveHistory);
   updateCaptures();
   if (checkGameOver()) return;
 
@@ -86,13 +89,15 @@ function onUndoClick() {
   if (aiThinking) return;
   if (Bridge.undoMove() !== 0) return;
 
+  moveHistory.pop();
   //in HvAI, if we just undid the AI move, also undo the human move that preceded it
   if (currentMode === MODE_AI && Bridge.getCurrentPlayer() === 2) {
     Bridge.undoMove();
+    moveHistory.pop();
   }
 
   currentSuggestion = null;
-  Render.board(Bridge.getBoard());
+  Render.board(Bridge.getBoard(), moveHistory);
   updateCaptures();
   setStatus(Bridge.getCurrentPlayer() === 1 ? 'Blue to play' : 'Pink to play');
 
@@ -118,7 +123,7 @@ function refreshSuggestion() {
     document.getElementById('ai-depth').textContent = 'AI depth reached: ' + Bridge.getLastDepth();
     updateDebugPanel();
 
-    Render.board(Bridge.getBoard());
+    Render.board(Bridge.getBoard(), moveHistory);
     if (Render.suggestion) Render.suggestion(currentSuggestion);
 
     if (label) {
@@ -133,11 +138,20 @@ function refreshSuggestion() {
 }
 
 function runAi() {
+  var prevBoard = new Int32Array(Bridge.getBoard());
   var result = Bridge.aiPlay();
   var t      = Bridge.getLastAiTime();
   aiThinking = false;
 
-  Render.board(Bridge.getBoard());
+  var newBoard = Bridge.getBoard();
+  for (var i = 0; i < 19 * 19; i++) {
+    if (prevBoard[i] === 0 && newBoard[i] === 2) {
+      moveHistory.push({ x: i % 19, y: Math.floor(i / 19) });
+      break;
+    }
+  }
+
+  Render.board(Bridge.getBoard(), moveHistory);
   updateCaptures();
   document.getElementById('ai-time').textContent  = 'AI time: ' + t.toFixed(3) + 's';
   document.getElementById('ai-depth').textContent = 'AI depth reached: ' + Bridge.getLastDepth();

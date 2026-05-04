@@ -2,6 +2,7 @@
 var Render = (function() {
   var boardEl = null;
   var cells   = [];
+  var COL_LABELS = ['A','B','C','D','E','F','G','H','J','K','L','M','N','O','P','Q','R','S','T'];
 
   function init(el) {
     boardEl = el;
@@ -18,9 +19,29 @@ var Render = (function() {
         cells.push(cell);
       }
     }
+
+    var colsEl = document.getElementById("coords-cols");
+    var rowsEl = document.getElementById("coords-rows");
+    if (colsEl) {
+      colsEl.innerHTML = "";
+      for (var c = 0; c < 19; c++) {
+        var span = document.createElement("span");
+        span.textContent = COL_LABELS[c];
+        colsEl.appendChild(span);
+      }
+    }
+    if (rowsEl) {
+      rowsEl.innerHTML = "";
+      for (var r = 1; r <= 19; r++) {
+        var span = document.createElement("span");
+        span.textContent = r;
+        rowsEl.appendChild(span);
+      }
+    }
   }
 
-  function board(stones) {
+  function board(stones, moveHistory) {
+    var history = moveHistory || [];
     for (var i = 0; i < 19 * 19; i++) {
         var s = stones[i];
         var cell = cells[i];
@@ -31,12 +52,34 @@ var Render = (function() {
         else {
             var existingStone = cell.querySelector(".neo-stone");
             var colorClass = s === 1 ? "black" : "white";
+            var moveNum = 0;
+            for (var m = 0; m < history.length; m++) {
+              if (history[m].y * 19 + history[m].x === i) { moveNum = m + 1; break; }
+            }
             if (!existingStone) {
               var stone = document.createElement("div");
               stone.className = "neo-stone " + colorClass;
+              if (moveNum > 0) {
+                var numSpan = document.createElement("span");
+                numSpan.className = "stone-num";
+                numSpan.textContent = moveNum;
+                stone.appendChild(numSpan);
+              }
               cell.appendChild(stone);
             } else {
               existingStone.className = "neo-stone " + colorClass;
+              var existingNum = existingStone.querySelector(".stone-num");
+              if (moveNum > 0) {
+                if (!existingNum) {
+                  var numSpan = document.createElement("span");
+                  numSpan.className = "stone-num";
+                  existingStone.appendChild(numSpan);
+                  existingNum = numSpan;
+                }
+                existingNum.textContent = moveNum;
+              } else if (existingNum) {
+                existingStone.removeChild(existingNum);
+              }
             }
         }
     }
