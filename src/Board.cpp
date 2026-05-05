@@ -1,6 +1,6 @@
 #include "Board.hpp"
 
-Board::Board() : _capturesBlack(0), _capturesWhite(0) {
+Board::Board() : _capturesBlack(0), _capturesWhite(0), _lastCapturedCount(0), _lastWinningCount(0) {
 	for (int y = 0; y < 19; ++y) {
 		for (int x = 0; x < 19; ++x) {
 			this->_grid[y][x] = EMPTY;
@@ -16,6 +16,16 @@ Board &Board::operator=(const Board &other) {
 	if (this != &other) {
 		this->_capturesBlack = other._capturesBlack;
 		this->_capturesWhite = other._capturesWhite;
+		this->_lastCapturedCount = other._lastCapturedCount;
+		this->_lastWinningCount = other._lastWinningCount;
+		for (int i = 0; i < MAX_CAPTURED_STONES; ++i) {
+			this->_lastCapturedX[i] = other._lastCapturedX[i];
+			this->_lastCapturedY[i] = other._lastCapturedY[i];
+		}
+		for (int i = 0; i < WINNING_LINE_SIZE; ++i) {
+			this->_lastWinningX[i] = other._lastWinningX[i];
+			this->_lastWinningY[i] = other._lastWinningY[i];
+		}
 		for (int y = 0; y < 19; ++y) {
 			for (int x = 0; x < 19; ++x) {
 				this ->_grid[y][x] = other._grid[y][x];
@@ -51,6 +61,54 @@ int Board::getCaptures(e_stone stone) const {
 	if (stone == WHITE)
 		return this->_capturesWhite;
 	return 0;
+}
+
+int Board::getLastCapturedCount() const {
+	return this->_lastCapturedCount;
+}
+
+int Board::getLastCapturedX(int index) const {
+	if (index < 0 || index >= this->_lastCapturedCount)
+		return -1;
+	return this->_lastCapturedX[index];
+}
+
+int Board::getLastCapturedY(int index) const {
+	if (index < 0 || index >= this->_lastCapturedCount)
+		return -1;
+	return this->_lastCapturedY[index];
+}
+
+int Board::getLastWinningCount() const {
+	return this->_lastWinningCount;
+}
+
+int Board::getLastWinningX(int index) const {
+	if (index < 0 || index >= this->_lastWinningCount)
+		return -1;
+	return this->_lastWinningX[index];
+}
+
+int Board::getLastWinningY(int index) const {
+	if (index < 0 || index >= this->_lastWinningCount)
+		return -1;
+	return this->_lastWinningY[index];
+}
+
+void Board::_clearLastCaptured() {
+	this->_lastCapturedCount = 0;
+}
+
+void Board::_recordCapturedStone(int x, int y) {
+	if (this->_lastCapturedCount >= MAX_CAPTURED_STONES)
+		return;
+	this->_lastCapturedX[this->_lastCapturedCount] = x;
+	this->_lastCapturedY[this->_lastCapturedCount] = y;
+	this->_lastCapturedCount++;
+}
+
+void Board::clearLastWinningLine() {
+	this->_lastWinningCount = 0;
 }
 
 void Board::printBoard() const {
@@ -165,6 +223,86 @@ bool Board::isDoubleThree(int x, int y, e_stone stone) const {
 	return freeThreeCount >= 2;
 }
 
+bool Board::_isLineBreakable(int x, int y, int dx, int dy, int countForward, int countBackward, e_stone stone) const {
+	if (this->_isVulnerable(x, y, stone))
+		return true;
+	for (int j = 1; j <= countForward; ++j) {
+		if (this->_isVulnerable(x + j * dx, y + j * dy, stone))
+			return true;
+	}
+	for (int j = 1; j <= countBackward; ++j) {
+		if (this->_isVulnerable(x - j * dx, y - j * dy, stone))
+			return true;
+	}
+	return false;
+}
+
+void Board::_storeLineFromRun(int x, int y, int dx, int dy, int countForward, int countBackward) {
+	int total = 1 + countForward + countBackward;
+	int preferredIndex = countBackward;
+	int startIndex = preferredIndex - 2;
+
+	if (startIndex < 0)
+		startIndex = 0;
+	if (startIndex > total - WINNING_LINE_SIZE)
+		startIndex = total - WINNING_LINE_SIZE;
+
+	int startOffset = -countBackward + startIndex;
+	this->_lastWinningCount = WINNING_LINE_SIZE;
+	for (int i = 0; i < WINNING_LINE_SIZE; ++i) {
+		int offset = startOffset + i;
+		this->_lastWinningX[i] = x + offset * dx;
+		this->_lastWinningY[i] = y + offset * dy;
+	}
+}
+
+bool Board::findWinningLineForMove(int x, int y, e_stone stone, bool requireUnbreakable) {
+	this->clearLastWinningLine();
+	int axes[4][2] = {{1, 0}, {0, 1}, {1, 1}, {1, -1}};
+
+	for (int i = 0; i < 4; ++i) {
+		int dx = axes[i][0];
+		int dy = axes[i][1];
+		int countForward = this->_countDirection(x, y, dx, dy, stone);
+		int countBackward = this->_countDirection(x, y, -dx, -dy, stone);
+
+		if (1 + countForward + countBackward >= WINNING_LINE_SIZE) {
+			if (requireUnbreakable && this->_isLineBreakable(x, y, dx, dy, countForward, countBackward, stone))
+				continue;
+			this->_storeLineFromRun(x, y, dx, dy, countForward, countBackward);
+			return true;
+		}
+	}
+	return false;
+}
+
+bool Board::findAnyFiveLine(e_stone stone) {
+	this->clearLastWinningLine();
+	int axes[4][2] = {{1, 0}, {0, 1}, {1, 1}, {-1, 1}};
+
+	for (int y = 0; y < 19; ++y) {
+		for (int x = 0; x < 19; ++x) {
+			if (this->_grid[y][x] != stone)
+				continue;
+			for (int i = 0; i < 4; ++i) {
+				int dx = axes[i][0];
+				int dy = axes[i][1];
+				int prevX = x - dx;
+				int prevY = y - dy;
+				if (prevX >= 0 && prevX < 19 && prevY >= 0 && prevY < 19 &&
+					this->_grid[prevY][prevX] == stone)
+					continue;
+				int countForward = this->_countDirection(x, y, dx, dy, stone);
+				if (1 + countForward >= WINNING_LINE_SIZE) {
+					this->_storeLineFromRun(x, y, dx, dy, countForward, 0);
+					return true;
+				}
+			}
+		}
+	}
+	return false;
+}
+
 //checks if the last stone is making an alignement of 5 or more and if it is breakable
 e_win_state Board::checkWin(int x, int y, e_stone stone) const {
 	bool foundFive = false;
@@ -184,26 +322,7 @@ e_win_state Board::checkWin(int x, int y, e_stone stone) const {
 		//if 5 or more aligned
 		if (1 + countForward + countBackward >= 5) {
 			foundFive = true;
-			bool currentLineBreakable = false;
-
-			//checking if last stone played is vulnerable
-			if (this->_isVulnerable(x, y, stone)) {
-				currentLineBreakable = true;
-			}
-
-			//checking if forward stones are vulnerable
-			for (int j = 1; j <= countForward && !currentLineBreakable; ++j) {
-				if (this->_isVulnerable(x + j * dx, y + j * dy, stone)) {
-					currentLineBreakable = true;
-				}
-			}
-
-			//checking if backward stones are vulnerable
-			for (int j = 1; j <= countBackward && !currentLineBreakable; ++j) {
-				if (this->_isVulnerable(x - j * dx, y - j * dy, stone)) {
-					currentLineBreakable = true;
-				}
-			}
+			bool currentLineBreakable = this->_isLineBreakable(x, y, dx, dy, countForward, countBackward, stone);
 
 			//stones not vulnerable, win
 			if (!currentLineBreakable) {
@@ -238,6 +357,7 @@ bool Board::hasFive(e_stone stone) const {
 int	Board::executeCaptures(int x, int y, e_stone stone) {
 	int	capturedPairs = 0;
 
+	this->_clearLastCaptured();
 	e_stone	opponent = (stone == BLACK) ? WHITE : BLACK;
 
 	//all possible directions
@@ -258,6 +378,8 @@ int	Board::executeCaptures(int x, int y, e_stone stone) {
 				this->_grid[y + 2 * dy][x + 2 * dx] == opponent &&
 				this->_grid[ny3][nx3] == stone) {
 					//capturing
+					this->_recordCapturedStone(x + dx, y + dy);
+					this->_recordCapturedStone(x + 2 * dx, y + 2 * dy);
 					this->_grid[y + dy][x + dx] = EMPTY;
 					this->_grid[y + 2 * dy][x + 2 * dx] = EMPTY;
 					capturedPairs++;

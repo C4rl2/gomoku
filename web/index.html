@@ -14,25 +14,35 @@
     <button class="brand-mark" type="button" onclick="location.reload()" aria-label="Back to menu">
       <span class="brand-mark__text">Gomoku</span>
     </button>
-    <div class="theme-switch-wrapper">
-      <input type="checkbox" id="theme-toggle" aria-label="Toggle Dark/Light Mode" />
-      <div class="toggle-switch" aria-hidden="true">
-        <span class="toggle-switch__icon toggle-switch__icon--night">
-          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path
-              d="M14.6 2.7c-1 1-1.6 2.5-1.6 4 0 3.2 2.6 5.8 5.8 5.8 1.1 0 2.1-.3 3-.8-.1 1.2-.5 2.4-1.2 3.5-1.5 2.4-4.1 3.8-6.9 3.8-4.5 0-8.2-3.7-8.2-8.2 0-4.2 3.1-7.6 7.1-8.1.7-.1 1.4-.1 2 .1z"
-              fill="currentColor" />
-          </svg>
-        </span>
-        <span class="toggle-switch__icon toggle-switch__icon--day">
-          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <circle cx="12" cy="12" r="4.2" fill="currentColor" />
-            <path
-              d="M12 2.8v2.6M12 18.6v2.6M21.2 12h-2.6M5.4 12H2.8M18.5 5.5l-1.8 1.8M7.3 16.7l-1.8 1.8M18.5 18.5l-1.8-1.8M7.3 7.3 5.5 5.5"
-              stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
-          </svg>
-        </span>
+    <div class="header-actions">
+      <div class="theme-switch-wrapper">
+        <input type="checkbox" id="theme-toggle" aria-label="Toggle Dark/Light Mode" />
+        <div class="toggle-switch" aria-hidden="true">
+          <span class="toggle-switch__icon toggle-switch__icon--night">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path
+                d="M14.6 2.7c-1 1-1.6 2.5-1.6 4 0 3.2 2.6 5.8 5.8 5.8 1.1 0 2.1-.3 3-.8-.1 1.2-.5 2.4-1.2 3.5-1.5 2.4-4.1 3.8-6.9 3.8-4.5 0-8.2-3.7-8.2-8.2 0-4.2 3.1-7.6 7.1-8.1.7-.1 1.4-.1 2 .1z"
+                fill="currentColor" />
+            </svg>
+          </span>
+          <span class="toggle-switch__icon toggle-switch__icon--day">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <circle cx="12" cy="12" r="4.2" fill="currentColor" />
+              <path
+                d="M12 2.8v2.6M12 18.6v2.6M21.2 12h-2.6M5.4 12H2.8M18.5 5.5l-1.8 1.8M7.3 16.7l-1.8 1.8M18.5 18.5l-1.8-1.8M7.3 7.3 5.5 5.5"
+                stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+            </svg>
+          </span>
+        </div>
       </div>
+      <button class="header-rules-btn" type="button" onclick="openRulesModal()" aria-label="Open rules">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M6 4.8h8.5a3.5 3.5 0 0 1 3.5 3.5v10.9H8.8A2.8 2.8 0 0 0 6 22V4.8z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+          <path d="M6 4.8H4.8A2.8 2.8 0 0 0 2 7.6v11.6h6.8" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+          <path d="M9.5 9h5M9.5 12.5h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+        <span>Rules</span>
+      </button>
     </div>
   </div>
 
@@ -48,10 +58,13 @@
           <input type="radio" name="mode" value="0" checked />
           <span class="mode-card__icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none">
-              <circle cx="8" cy="8" r="3" stroke="currentColor" stroke-width="2"/>
-              <path d="M4 20a4 4 0 0 1 8 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-              <path d="M16 6h4v4M20 6l-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              <circle cx="17" cy="17" r="2.5" stroke="currentColor" stroke-width="2"/>
+              <path d="M3 3L21 21" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" opacity="0.35"/>
+              <circle cx="6" cy="15" r="2.5" stroke="currentColor" stroke-width="1.7"/>
+              <path d="M2.2 21.8a3.8 3.8 0 0 1 7.6 0" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+              <circle cx="18" cy="1.3" r="0.8" fill="currentColor"/>
+              <rect x="14.5" y="2.5" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.7"/>
+              <circle cx="16.4" cy="5.5" r="0.95" fill="currentColor"/>
+              <circle cx="19.6" cy="5.5" r="0.95" fill="currentColor"/>
             </svg>
           </span>
           <span class="mode-card__text">Human vs AI</span>
@@ -60,9 +73,11 @@
           <input type="radio" name="mode" value="1" />
           <span class="mode-card__icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none">
-              <circle cx="7.5" cy="8" r="3" stroke="currentColor" stroke-width="2"/>
-              <circle cx="16.5" cy="8" r="3" stroke="currentColor" stroke-width="2"/>
-              <path d="M3.5 20a4 4 0 0 1 8 0M12.5 20a4 4 0 0 1 8 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <path d="M3 3L21 21" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" opacity="0.35"/>
+              <circle cx="6" cy="15" r="2.5" stroke="currentColor" stroke-width="1.7"/>
+              <path d="M2.2 21.8a3.8 3.8 0 0 1 7.6 0" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+              <circle cx="18" cy="3" r="2.5" stroke="currentColor" stroke-width="1.7"/>
+              <path d="M14.2 9.8a3.8 3.8 0 0 1 7.6 0" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
             </svg>
           </span>
           <span class="mode-card__text">Human vs Human</span>
@@ -71,10 +86,15 @@
           <input type="radio" name="mode" value="2" />
           <span class="mode-card__icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none">
-              <rect x="4" y="5" width="16" height="12" rx="3" stroke="currentColor" stroke-width="2"/>
-              <path d="M9 2v3M15 2v3M8 21h8M12 17v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-              <circle cx="9" cy="11" r="1.2" fill="currentColor"/>
-              <circle cx="15" cy="11" r="1.2" fill="currentColor"/>
+              <path d="M3 3L21 21" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" opacity="0.35"/>
+              <circle cx="6" cy="13.3" r="0.8" fill="currentColor"/>
+              <rect x="2.5" y="14.5" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.7"/>
+              <circle cx="4.4" cy="17.5" r="0.95" fill="currentColor"/>
+              <circle cx="7.6" cy="17.5" r="0.95" fill="currentColor"/>
+              <circle cx="18" cy="1.3" r="0.8" fill="currentColor"/>
+              <rect x="14.5" y="2.5" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.7"/>
+              <circle cx="16.4" cy="5.5" r="0.95" fill="currentColor"/>
+              <circle cx="19.6" cy="5.5" r="0.95" fill="currentColor"/>
             </svg>
           </span>
           <span class="mode-card__text">AI vs AI</span>
@@ -275,14 +295,141 @@
     </section>
   </div>
 
+  <div id="rules-modal" class="rules-modal" hidden>
+    <div class="rules-modal__backdrop" onclick="closeRulesModal()" aria-hidden="true"></div>
+    <section class="rules-dialog" role="dialog" aria-modal="true" aria-labelledby="rules-title">
+      <button class="rules-dialog__close" type="button" onclick="closeRulesModal()" aria-label="Close rules">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </button>
+
+      <article class="rules-slide rules-slide--active" data-rule-slide>
+        <div class="rules-slide__header">
+          <span class="panel-kicker">Rules 01</span>
+          <h2 id="rules-title">Welcome to Gomoku</h2>
+        </div>
+        <div class="rules-slide__body">
+          <p>Gomoku is a five-in-a-row strategy game played on a 19x19 board.</p>
+          <ul class="rules-list">
+            <li>Blue always plays first.</li>
+            <li>Players place one stone on an empty intersection each turn.</li>
+            <li>A line of five stones can win, unless it can still be broken by capture.</li>
+            <li>Capturing five pairs also wins the game.</li>
+          </ul>
+          <div class="rules-visual">
+            <div class="rules-demo-board" data-rules-board="intro" aria-hidden="true"></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="rules-slide" data-rule-slide>
+        <div class="rules-slide__header">
+          <span class="panel-kicker">Rules 02</span>
+          <h2>Captures</h2>
+        </div>
+        <div class="rules-slide__body">
+          <p>You capture a pair by flanking two adjacent opponent stones with your own stones.</p>
+          <div class="rules-visual">
+            <div class="rules-demo-board" data-rules-board="capture" aria-hidden="true"></div>
+          </div>
+          <p>Each capture removes two stones. Capture five pairs, ten stones total, and the game ends immediately.</p>
+          <div class="rules-capture-card" aria-hidden="true">
+            <div class="player-stone player-stone--pink"></div>
+            <span class="player-name">Pink</span>
+            <svg class="lives-svg" viewBox="0 0 90 14">
+              <circle class="life life--pink" cx="9" cy="7" r="6.5"/>
+              <circle class="life life--pink" cx="27" cy="7" r="6.5"/>
+              <circle class="life life--pink" cx="45" cy="7" r="6.5"/>
+              <circle class="life life--pink" cx="63" cy="7" r="6.5"/>
+              <circle class="life life--pink" cx="81" cy="7" r="6.5"/>
+            </svg>
+            <span class="player-captures">4 caps</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="rules-slide" data-rule-slide>
+        <div class="rules-slide__header">
+          <span class="panel-kicker">Rules 03</span>
+          <h2>Free-three</h2>
+        </div>
+        <div class="rules-slide__body">
+          <p>A free-three is a three-stone alignment that can become an open four if it is not blocked right away.</p>
+          <div class="rules-visual rules-visual--stack">
+            <div class="rules-demo-board" data-rules-board="free-diagonal" aria-hidden="true"></div>
+            <div class="rules-demo-board" data-rules-board="free-gap" aria-hidden="true"></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="rules-slide" data-rule-slide>
+        <div class="rules-slide__header">
+          <span class="panel-kicker">Rules 04</span>
+          <h2>Double-three rule</h2>
+        </div>
+        <div class="rules-slide__body">
+          <p>A move is forbidden when it creates two free-threes at the same time. A double-three created by capturing is still legal.</p>
+          <div class="rules-visual">
+            <div class="rules-demo-board" data-rules-board="double-three" aria-hidden="true"></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="rules-slide" data-rule-slide>
+        <div class="rules-slide__header">
+          <span class="panel-kicker">Rules 05</span>
+          <h2>Endgame captures</h2>
+        </div>
+        <div class="rules-slide__body">
+          <p>A five-stone line wins only if the opponent cannot break it by capturing a pair.</p>
+          <div class="rules-visual">
+            <div class="rules-demo-board" data-rules-board="endgame" aria-hidden="true"></div>
+          </div>
+          <p>If that capture would be the fifth captured pair, the opponent wins by capture instead.</p>
+          <div class="rules-capture-card" aria-hidden="true">
+            <div class="player-stone player-stone--pink"></div>
+            <span class="player-name">Pink</span>
+            <svg class="lives-svg" viewBox="0 0 90 14">
+              <circle class="life life--pink" cx="9" cy="7" r="6.5"/>
+              <circle class="life life--pink life--lost" cx="27" cy="7" r="6.5"/>
+              <circle class="life life--pink life--lost" cx="45" cy="7" r="6.5"/>
+              <circle class="life life--pink life--lost" cx="63" cy="7" r="6.5"/>
+              <circle class="life life--pink life--lost" cx="81" cy="7" r="6.5"/>
+            </svg>
+            <span class="player-captures">1 life left</span>
+          </div>
+        </div>
+      </article>
+
+      <div id="rules-progress" class="rules-progress" aria-label="Rules progress"></div>
+      <div class="rules-actions">
+        <button id="rules-back-btn" class="rules-nav-btn" type="button" onclick="prevRulesSlide()">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M15 5l-7 7 7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span>Back</span>
+        </button>
+        <button id="rules-next-btn" class="rules-nav-btn rules-nav-btn--primary" type="button" onclick="nextRulesSlide()">
+          <span id="rules-next-label">Next</span>
+          <svg id="rules-next-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M9 5l7 7-7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
+    </section>
+  </div>
+
   <script src="gomoku.js"></script>
   <script src="js/bridge.js"></script>
+  <script src="js/board-utils.js"></script>
   <script src="js/render.js"></script>
   <script src="js/state.js"></script>
   <script src="js/setup.js"></script>
   <script src="js/ui.js"></script>
   <script src="js/history.js"></script>
   <script src="js/endgame.js"></script>
+  <script src="js/rules.js"></script>
   <script src="js/app.js"></script>
 </body>
 

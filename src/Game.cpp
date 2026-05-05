@@ -74,6 +74,7 @@ void Game::_restoreHistoryState(int index) {
 // Shared by placeStone() and aiPlay() to avoid duplication.
 int Game::_applyMove(int x, int y) {
 	e_stone playedStone = this->_currentPlayer;
+	this->_board.clearLastWinningLine();
 
 	if (!this->_board.setStone(x, y, this->_currentPlayer))
 		return -1;
@@ -83,6 +84,7 @@ int Game::_applyMove(int x, int y) {
 	// Check if the opponent's existing five-in-a-row survived the captures.
 	e_stone opponent = (this->_currentPlayer == BLACK) ? WHITE : BLACK;
 	if (this->_board.hasFive(opponent)) {
+		this->_board.findAnyFiveLine(opponent);
 		this->_gameOver = true;
 		this->_winner   = (int)opponent;
 		this->_saveHistoryState(x, y, playedStone);
@@ -93,6 +95,10 @@ int Game::_applyMove(int x, int y) {
 	bool        winByCapture = (this->_board.getCaptures(this->_currentPlayer) >= 5);
 
 	if (winState == WIN || winByCapture) {
+		if (winState == WIN)
+			this->_board.findWinningLineForMove(x, y, this->_currentPlayer, true);
+		else
+			this->_board.clearLastWinningLine();
 		this->_gameOver = true;
 		this->_winner   = (int)this->_currentPlayer;
 		this->_saveHistoryState(x, y, playedStone);
@@ -100,6 +106,8 @@ int Game::_applyMove(int x, int y) {
 	}
 
 	this->_switchPlayer();
+	if (winState == BREAKABLE_FIVE)
+		this->_board.findWinningLineForMove(x, y, playedStone, false);
 	this->_saveHistoryState(x, y, playedStone);
 	if (winState == BREAKABLE_FIVE)
 		return 2; // game continues, opponent can still break the alignment
@@ -250,6 +258,48 @@ void Game::getHistoryBoard(int index, int *out) const {
 	for (int y = 0; y < 19; ++y)
 		for (int x = 0; x < 19; ++x)
 			out[y * 19 + x] = (int)board->getStone(x, y);
+}
+
+int Game::getLastCapturedCount() const {
+	return this->_board.getLastCapturedCount();
+}
+
+int Game::getLastCapturedX(int index) const {
+	return this->_board.getLastCapturedX(index);
+}
+
+int Game::getLastCapturedY(int index) const {
+	return this->_board.getLastCapturedY(index);
+}
+
+int Game::getHistoryCapturedCount(int historyIndex) const {
+	if (historyIndex <= 0 || historyIndex >= (int)this->_history.size())
+		return 0;
+	return this->_history[historyIndex]._board.getLastCapturedCount();
+}
+
+int Game::getHistoryCapturedX(int historyIndex, int capturedIndex) const {
+	if (historyIndex <= 0 || historyIndex >= (int)this->_history.size())
+		return -1;
+	return this->_history[historyIndex]._board.getLastCapturedX(capturedIndex);
+}
+
+int Game::getHistoryCapturedY(int historyIndex, int capturedIndex) const {
+	if (historyIndex <= 0 || historyIndex >= (int)this->_history.size())
+		return -1;
+	return this->_history[historyIndex]._board.getLastCapturedY(capturedIndex);
+}
+
+int Game::getWinningLineCount() const {
+	return this->_board.getLastWinningCount();
+}
+
+int Game::getWinningLineX(int index) const {
+	return this->_board.getLastWinningX(index);
+}
+
+int Game::getWinningLineY(int index) const {
+	return this->_board.getLastWinningY(index);
 }
 
 //forward instrumentation getters for the frontend debug panel

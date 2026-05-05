@@ -1,5 +1,7 @@
 var Bridge = (function() {
   var G = null;
+  var BOARD_SIZE = 19;
+  var BOARD_CELLS = BOARD_SIZE * BOARD_SIZE;
 
   function load(onReady) {
     GomokuModule().then(function(module) {
@@ -28,13 +30,26 @@ var Bridge = (function() {
   function getHistoryMoveX(index) { return G.ccall('get_history_move_x', 'number', ['number'], [index]); }
   function getHistoryMoveY(index) { return G.ccall('get_history_move_y', 'number', ['number'], [index]); }
   function getHistoryMovePlayer(index) { return G.ccall('get_history_move_player', 'number', ['number'], [index]); }
+  function getLastCapturedCount() { return G.ccall('get_last_captured_count', 'number', [], []); }
+  function getLastCapturedX(index) { return G.ccall('get_last_captured_x', 'number', ['number'], [index]); }
+  function getLastCapturedY(index) { return G.ccall('get_last_captured_y', 'number', ['number'], [index]); }
+  function getHistoryCapturedCount(index) { return G.ccall('get_history_captured_count', 'number', ['number'], [index]); }
+  function getHistoryCapturedX(historyIndex, capturedIndex) {
+    return G.ccall('get_history_captured_x', 'number', ['number', 'number'], [historyIndex, capturedIndex]);
+  }
+  function getHistoryCapturedY(historyIndex, capturedIndex) {
+    return G.ccall('get_history_captured_y', 'number', ['number', 'number'], [historyIndex, capturedIndex]);
+  }
+  function getWinningLineCount() { return G.ccall('get_winning_line_count', 'number', [], []); }
+  function getWinningLineX(index) { return G.ccall('get_winning_line_x', 'number', ['number'], [index]); }
+  function getWinningLineY(index) { return G.ccall('get_winning_line_y', 'number', ['number'], [index]); }
 
   //runs the full ai pipeline for the current player without applying the move
   //returns {x, y} on success or null when no suggestion is available
   function suggestMove() {
     var packed = G.ccall('suggest_move', 'number', [], []);
     if (packed < 0) return null;
-    return { x: packed % 19, y: Math.floor(packed / 19) };
+    return { x: packed % BOARD_SIZE, y: Math.floor(packed / BOARD_SIZE) };
   }
   function getLastSuggestTime() { return G.ccall('get_last_suggest_time', 'number', [], []); }
 
@@ -50,12 +65,12 @@ var Bridge = (function() {
 
   function getBoard() {
     var ptr = G.ccall('get_board', 'number', [], []);
-    return new Int32Array(G.HEAP32.buffer, ptr, 19 * 19);
+    return new Int32Array(G.HEAP32.buffer, ptr, BOARD_CELLS);
   }
 
   function getHistoryBoard(index) {
     var ptr = G.ccall('get_history_board', 'number', ['number'], [index]);
-    return new Int32Array(G.HEAP32.buffer, ptr, 19 * 19);
+    return new Int32Array(G.HEAP32.buffer, ptr, BOARD_CELLS);
   }
 
   function getMoveHistory(limit) {
@@ -71,6 +86,30 @@ var Bridge = (function() {
       });
     }
     return history;
+  }
+
+  function getLastCapturedCells() {
+    var cells = [];
+    var count = getLastCapturedCount();
+    for (var i = 0; i < count; i++) {
+      cells.push({
+        x: getLastCapturedX(i),
+        y: getLastCapturedY(i)
+      });
+    }
+    return cells;
+  }
+
+  function getWinningLine() {
+    var line = [];
+    var count = getWinningLineCount();
+    for (var i = 0; i < count; i++) {
+      line.push({
+        x: getWinningLineX(i),
+        y: getWinningLineY(i)
+      });
+    }
+    return line;
   }
 
   return {
@@ -103,6 +142,17 @@ var Bridge = (function() {
     getHistoryMoveX:    getHistoryMoveX,
     getHistoryMoveY:    getHistoryMoveY,
     getHistoryMovePlayer: getHistoryMovePlayer,
+    getLastCapturedCount: getLastCapturedCount,
+    getLastCapturedX:   getLastCapturedX,
+    getLastCapturedY:   getLastCapturedY,
+    getLastCapturedCells: getLastCapturedCells,
+    getHistoryCapturedCount: getHistoryCapturedCount,
+    getHistoryCapturedX: getHistoryCapturedX,
+    getHistoryCapturedY: getHistoryCapturedY,
+    getWinningLineCount: getWinningLineCount,
+    getWinningLineX:    getWinningLineX,
+    getWinningLineY:    getWinningLineY,
+    getWinningLine:     getWinningLine,
     getMoveHistory:     getMoveHistory,
     suggestMove:        suggestMove,
     getLastSuggestTime: getLastSuggestTime

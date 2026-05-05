@@ -68,6 +68,15 @@ class Game {
 		int		getHistoryMoveY(int index) const;
 		int		getHistoryMovePlayer(int index) const;
 		void	getHistoryBoard(int index, int *out) const;
+		int		getLastCapturedCount() const;
+		int		getLastCapturedX(int index) const;
+		int		getLastCapturedY(int index) const;
+		int		getHistoryCapturedCount(int historyIndex) const;
+		int		getHistoryCapturedX(int historyIndex, int capturedIndex) const;
+		int		getHistoryCapturedY(int historyIndex, int capturedIndex) const;
+		int		getWinningLineCount() const;
+		int		getWinningLineX(int index) const;
+		int		getWinningLineY(int index) const;
 
 		//ai per-move instrumentation forwarded from the underlying AI instance
 		int		getLastNodes() const;
