@@ -3,11 +3,11 @@ function syncMoveHistory(limit) {
   moveHistory = Bridge.getMoveHistory(limit);
 }
 
-function renderCurrentBoard() {
+function renderCurrentBoard(captureCells) {
   previewHistoryIndex = null;
   syncMoveHistory();
   if (Render.clearWinHighlights) Render.clearWinHighlights();
-  Render.board(Bridge.getBoard(), moveHistory);
+  Render.board(Bridge.getBoard(), moveHistory, { captureCells: captureCells || [] });
   if (currentSuggestion && Render.suggestion && !Bridge.isGameOver())
     Render.suggestion(currentSuggestion);
 }
@@ -54,8 +54,9 @@ function createHistoryRow(index, currentIndex, previewIndex) {
 
   var stone = document.createElement('span');
   stone.className = 'history-move__stone';
+  var player = 0;
   if (index > 0) {
-    var player = Bridge.getHistoryMovePlayer(index);
+    player = Bridge.getHistoryMovePlayer(index);
     stone.className += player === 1 ? ' history-move__stone--blue' : ' history-move__stone--pink';
   }
   btn.appendChild(stone);
@@ -65,7 +66,46 @@ function createHistoryRow(index, currentIndex, previewIndex) {
   coord.textContent = index === 0 ? 'Start' : formatMoveCoord(index);
   btn.appendChild(coord);
 
+  btn.appendChild(createHistoryBadges(index, player));
+
   return btn;
+}
+
+function createHistoryBadges(index, player) {
+  var wrap = document.createElement('span');
+  wrap.className = 'history-move__badges';
+  if (index <= 0 || !player) return wrap;
+
+  var meta = getHistoryMoveMeta(index, player);
+  if (meta.captures > 0)
+    wrap.appendChild(createHistoryBadge('capture', 'x' + meta.captures));
+  if (meta.run >= 5)
+    wrap.appendChild(createHistoryBadge('threat', '5'));
+  else if (meta.run >= 4)
+    wrap.appendChild(createHistoryBadge('threat', '4'));
+  return wrap;
+}
+
+function createHistoryBadge(type, label) {
+  var badge = document.createElement('span');
+  badge.className = 'history-badge history-badge--' + type;
+  badge.textContent = label;
+  return badge;
+}
+
+function getHistoryMoveMeta(index, player) {
+  var current = BoardUtils.snapshot(Bridge.getHistoryBoard(index));
+  var x = Bridge.getHistoryMoveX(index);
+  var y = Bridge.getHistoryMoveY(index);
+  return {
+    captures: getHistoryCapturedCount(index),
+    run: BoardUtils.longestRunThrough(current, x, y, player)
+  };
+}
+
+function getHistoryCapturedCount(index) {
+  if (!Bridge.getHistoryCapturedCount) return 0;
+  return Bridge.getHistoryCapturedCount(index);
 }
 
 function previewHistory(index) {

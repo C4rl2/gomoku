@@ -35,6 +35,15 @@ extern "C" {
 	EMSCRIPTEN_KEEPALIVE int	get_history_move_x(int index) { return g_game.getHistoryMoveX(index); }
 	EMSCRIPTEN_KEEPALIVE int	get_history_move_y(int index) { return g_game.getHistoryMoveY(index); }
 	EMSCRIPTEN_KEEPALIVE int	get_history_move_player(int index) { return g_game.getHistoryMovePlayer(index); }
+	EMSCRIPTEN_KEEPALIVE int	get_last_captured_count() { return g_game.getLastCapturedCount(); }
+	EMSCRIPTEN_KEEPALIVE int	get_last_captured_x(int index) { return g_game.getLastCapturedX(index); }
+	EMSCRIPTEN_KEEPALIVE int	get_last_captured_y(int index) { return g_game.getLastCapturedY(index); }
+	EMSCRIPTEN_KEEPALIVE int	get_history_captured_count(int historyIndex) { return g_game.getHistoryCapturedCount(historyIndex); }
+	EMSCRIPTEN_KEEPALIVE int	get_history_captured_x(int historyIndex, int capturedIndex) { return g_game.getHistoryCapturedX(historyIndex, capturedIndex); }
+	EMSCRIPTEN_KEEPALIVE int	get_history_captured_y(int historyIndex, int capturedIndex) { return g_game.getHistoryCapturedY(historyIndex, capturedIndex); }
+	EMSCRIPTEN_KEEPALIVE int	get_winning_line_count() { return g_game.getWinningLineCount(); }
+	EMSCRIPTEN_KEEPALIVE int	get_winning_line_x(int index) { return g_game.getWinningLineX(index); }
+	EMSCRIPTEN_KEEPALIVE int	get_winning_line_y(int index) { return g_game.getWinningLineY(index); }
 
 	//runs the full ai pipeline for the current player without applying the move
 	//returns y * 19 + x on success, -1 if no suggestion (game over or wrong mode)

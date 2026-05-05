@@ -1,5 +1,7 @@
 
 var Render = (function() {
+  var CAPTURE_ANIMATION_MS = 560;
+  var WIN_STONE_DELAY_MS = 260;
   var boardEl = null;
   var cells   = [];
   var COL_LABELS = ['A','B','C','D','E','F','G','H','J','K','L','M','N','O','P','Q','R','S','T'];
@@ -9,8 +11,8 @@ var Render = (function() {
     boardEl.innerHTML = "";
     cells = [];
 
-    for (var y = 0; y < 19; y++) {
-      for (var x = 0; x < 19; x++) {
+    for (var y = 0; y < BoardUtils.BOARD_SIZE; y++) {
+      for (var x = 0; x < BoardUtils.BOARD_SIZE; x++) {
         var cell = document.createElement("div");
         cell.className = "neo-cell";
         cell.dataset.x = x;
@@ -24,7 +26,7 @@ var Render = (function() {
     var rowsEl = document.getElementById("coords-rows");
     if (colsEl) {
       colsEl.innerHTML = "";
-      for (var c = 0; c < 19; c++) {
+      for (var c = 0; c < BoardUtils.BOARD_SIZE; c++) {
         var span = document.createElement("span");
         span.textContent = COL_LABELS[c];
         colsEl.appendChild(span);
@@ -32,7 +34,7 @@ var Render = (function() {
     }
     if (rowsEl) {
       rowsEl.innerHTML = "";
-      for (var r = 1; r <= 19; r++) {
+      for (var r = 1; r <= BoardUtils.BOARD_SIZE; r++) {
         var span = document.createElement("span");
         span.textContent = r;
         rowsEl.appendChild(span);
@@ -40,22 +42,27 @@ var Render = (function() {
     }
   }
 
-  function board(stones, moveHistory) {
-    var history = moveHistory || [];
-    for (var i = 0; i < 19 * 19; i++) {
+  function board(stones, moveHistory, options) {
+    var moveNumbers = buildMoveNumberMap(moveHistory || []);
+    var captureMap = buildCaptureMap(options && options.captureCells);
+    for (var i = 0; i < BoardUtils.BOARD_SIZE * BoardUtils.BOARD_SIZE; i++) {
         var s = stones[i];
         var cell = cells[i];
 
         if (s === 0) {
-            cell.innerHTML = "";
+            if (captureMap[i] && cell.querySelector(".neo-stone")) {
+              animateCapturedCell(cell);
+            } else if (cell.classList.contains("neo-cell--capturing")) {
+              continue;
+            } else {
+              cell.innerHTML = "";
+              cell.classList.remove("neo-cell--capturing");
+            }
         }
         else {
             var existingStone = cell.querySelector(".neo-stone");
             var colorClass = s === 1 ? "black" : "white";
-            var moveNum = 0;
-            for (var m = 0; m < history.length; m++) {
-              if (history[m].y * 19 + history[m].x === i) { moveNum = m + 1; break; }
-            }
+            var moveNum = moveNumbers[i] || 0;
             if (!existingStone) {
               var stone = document.createElement("div");
               stone.className = "neo-stone " + colorClass;
@@ -67,6 +74,7 @@ var Render = (function() {
               }
               cell.appendChild(stone);
             } else {
+              cell.classList.remove("neo-cell--capturing");
               existingStone.className = "neo-stone " + colorClass;
               var existingNum = existingStone.querySelector(".stone-num");
               if (moveNum > 0) {
@@ -85,6 +93,34 @@ var Render = (function() {
     }
   }
 
+  function buildCaptureMap(captureCells) {
+    var map = {};
+    if (!captureCells) return map;
+    for (var i = 0; i < captureCells.length; i++) {
+      map[BoardUtils.index(captureCells[i].x, captureCells[i].y)] = true;
+    }
+    return map;
+  }
+
+  function buildMoveNumberMap(history) {
+    var map = {};
+    for (var i = 0; i < history.length; i++)
+      map[BoardUtils.index(history[i].x, history[i].y)] = i + 1;
+    return map;
+  }
+
+  function animateCapturedCell(cell) {
+    var stone = cell.querySelector(".neo-stone");
+    if (!stone) return;
+    cell.classList.add("neo-cell--capturing");
+    stone.classList.add("neo-stone--captured");
+    setTimeout(function() {
+      if (!cell.classList.contains("neo-cell--capturing")) return;
+      cell.innerHTML = "";
+      cell.classList.remove("neo-cell--capturing");
+    }, CAPTURE_ANIMATION_MS);
+  }
+
   function clearWinHighlights() {
     if (!boardEl) return;
     var highlighted = boardEl.querySelectorAll(".neo-cell--winning");
@@ -99,10 +135,10 @@ var Render = (function() {
     for (var i = 0; i < line.length; i++) {
       (function(cellInfo, delay) {
         setTimeout(function() {
-          var idx = cellInfo.y * 19 + cellInfo.x;
+          var idx = BoardUtils.index(cellInfo.x, cellInfo.y);
           if (cells[idx]) cells[idx].classList.add("neo-cell--winning");
         }, delay);
-      })(line[i], i * 260);
+      })(line[i], i * WIN_STONE_DELAY_MS);
     }
   }
 
@@ -115,28 +151,19 @@ var Render = (function() {
     };
   }
 
-  //draws a translucent hollow marker on the suggested empty cell
-  //must be re-applied after every board() call since board() resets innerHTML
+  // Suggestions are re-applied after board() because empty cells are rebuilt.
   function suggestion(cell) {
     var prev = boardEl ? boardEl.querySelector(".neo-suggestion") : null;
     if (prev && prev.parentNode) prev.parentNode.removeChild(prev);
     if (!cell || !cells.length) return;
-    var idx = cell.y * 19 + cell.x;
+    var idx = BoardUtils.index(cell.x, cell.y);
     var target = cells[idx];
     if (!target) return;
     var marker = document.createElement("div");
     marker.className = "neo-suggestion";
-    marker.style.position       = "absolute";
-    marker.style.top            = "50%";
-    marker.style.left           = "50%";
-    marker.style.transform      = "translate(-50%, -50%)";
-    marker.style.width          = "60%";
-    marker.style.height         = "60%";
-    marker.style.borderRadius   = "50%";
-    marker.style.border         = "2px dashed var(--ui-accent)";
-    marker.style.boxShadow      = "0 0 12px var(--ui-accent-muted)";
-    marker.style.boxSizing      = "border-box";
-    marker.style.pointerEvents  = "none";
+    var core = document.createElement("span");
+    core.className = "neo-suggestion__core";
+    marker.appendChild(core);
     target.style.position = target.style.position || "relative";
     target.appendChild(marker);
   }

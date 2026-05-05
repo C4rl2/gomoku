@@ -1,9 +1,11 @@
 .theme-switch-wrapper {
   position: relative;
+  display: block;
   width: 16em;
   height: 7em;
   font-size: 5px;
   flex: 0 0 auto;
+  box-sizing: border-box;
 }
 
 .theme-switch-wrapper input[type="checkbox"] {

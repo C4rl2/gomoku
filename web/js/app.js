@@ -1,3 +1,8 @@
+var SETUP_EXIT_MS = 280;
+var HINT_DELAY_MS = 20;
+var HUMAN_AI_DELAY_MS = 20;
+var AI_V_AI_DELAY_MS = 180;
+
 Bridge.load(function () {
   document.getElementById('start-btn').disabled = false;
 });
@@ -15,9 +20,23 @@ function startGame() {
   if (Render.clearWinHighlights) Render.clearWinHighlights();
   Bridge.gameInit(depth, currentMode);
 
+  var startBtn = document.getElementById('start-btn');
+  var setupEl = document.getElementById('setup');
+  if (startBtn) startBtn.disabled = true;
+  if (setupEl) {
+    setupEl.classList.add('setup--leaving');
+    setTimeout(enterGameView, SETUP_EXIT_MS);
+  } else {
+    enterGameView();
+  }
+}
+
+function enterGameView() {
   document.getElementById('content').style.display = 'none';
   document.getElementById('setup').style.display = 'none';
-  document.getElementById('game').style.display = '';
+  var gameEl = document.getElementById('game');
+  gameEl.style.display = '';
+  gameEl.classList.add('game-entering');
 
   var canvas = document.getElementById('board');
   Render.init(canvas);
@@ -107,7 +126,7 @@ function refreshSuggestion() {
 
     setStatus(Bridge.getCurrentPlayer() === 1 ? 'Blue to play' : 'Pink to play');
     updateActionButtons();
-  }, 20);
+  }, HINT_DELAY_MS);
 }
 
 function maybeRefreshHint() {
@@ -126,7 +145,7 @@ function scheduleAiTurn() {
   setStatus('AI thinking...');
   updateTurnIndicator(Bridge.getCurrentPlayer());
   updateActionButtons();
-  setTimeout(runAi, currentMode === MODE_AI_V_AI ? 180 : 20);
+  setTimeout(runAi, currentMode === MODE_AI_V_AI ? AI_V_AI_DELAY_MS : HUMAN_AI_DELAY_MS);
 }
 
 function runAi() {
@@ -139,8 +158,9 @@ function runAi() {
 }
 
 function finishAppliedMove(result) {
+  var capturedCells = Bridge.getLastCapturedCells ? Bridge.getLastCapturedCells() : [];
   syncMoveHistory();
-  renderCurrentBoard();
+  renderCurrentBoard(capturedCells);
   updateCaptures();
   renderMoveHistory();
   updateActionButtons();
