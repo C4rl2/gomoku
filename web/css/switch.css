@@ -28,7 +28,7 @@
   height: 100%;
   overflow: hidden;
   border-radius: 3.5em;
-  transition: box-shadow 300ms ease-out 0s;
+  transition: box-shadow 300ms ease-out;
   background-color: var(--neo-sunken-fill);
   box-shadow:
     inset 0 0 0.8em var(--neo-sunken-hole),
@@ -50,9 +50,9 @@
   content: "";
   border-radius: 3.5em;
   transition:
-    left 300ms cubic-bezier(0.175, 0.885, 0.32, 1.2) 0s,
-    background-color 300ms ease-out 0s,
-    box-shadow 300ms ease-out 0s;
+    left 300ms cubic-bezier(0.175, 0.885, 0.32, 1.2),
+    background-color 300ms ease-out,
+    box-shadow 300ms ease-out;
 }
 
 .toggle-switch::before {
@@ -66,7 +66,7 @@
 
 .toggle-switch::after {
   opacity: 0.3;
-  transition: opacity 300ms ease-out 0s;
+  transition: opacity 300ms ease-out;
 }
 
 .toggle-switch__icon {
@@ -79,9 +79,9 @@
   width: 4em;
   height: 4em;
   transform: translateY(-50%);
-  transition: opacity 300ms ease-out 0s,
-              transform 300ms ease-out 0s,
-              color 300ms ease-out 0s;
+  transition: opacity 300ms ease-out,
+    transform 300ms ease-out,
+    color 300ms ease-out;
 }
 
 .toggle-switch__icon svg {
@@ -91,34 +91,36 @@
 }
 
 .toggle-switch__icon--night {
-  left: 2em;
-  color: var(--toggle-night-icon);
-  opacity: 1;
-}
-
-.toggle-switch__icon--day {
   right: 2em;
-  color: var(--toggle-day-icon-muted);
-  opacity: 1;
-}
-
-.theme-switch-wrapper input[type="checkbox"]:checked ~ .toggle-switch::before,
-.theme-switch-wrapper input[type="checkbox"]:checked ~ .toggle-switch::after {
-  left: 9.25em;
-}
-
-.theme-switch-wrapper input[type="checkbox"]:checked ~ .toggle-switch::after {
-  opacity: 0.7;
-}
-
-.theme-switch-wrapper input[type="checkbox"]:checked ~ .toggle-switch .toggle-switch__icon--night {
   color: var(--toggle-night-icon-muted);
   opacity: 0.42;
   transform: translateY(-50%) scale(0.94);
 }
 
-.theme-switch-wrapper input[type="checkbox"]:checked ~ .toggle-switch .toggle-switch__icon--day {
+.toggle-switch__icon--day {
+  left: 2em;
   color: var(--toggle-day-icon);
+  opacity: 1;
+  transform: translateY(-50%) scale(1.04);
+}
+
+.theme-switch-wrapper input[type="checkbox"]:checked~.toggle-switch::before,
+.theme-switch-wrapper input[type="checkbox"]:checked~.toggle-switch::after {
+  left: 9.25em;
+}
+
+.theme-switch-wrapper input[type="checkbox"]:checked~.toggle-switch::after {
+  opacity: 0.7;
+}
+
+.theme-switch-wrapper input[type="checkbox"]:checked~.toggle-switch .toggle-switch__icon--day {
+  color: var(--toggle-day-icon-muted);
+  opacity: 0.42;
+  transform: translateY(-50%) scale(0.94);
+}
+
+.theme-switch-wrapper input[type="checkbox"]:checked~.toggle-switch .toggle-switch__icon--night {
+  color: var(--toggle-night-icon);
   opacity: 1;
   transform: translateY(-50%) scale(1.04);
 }

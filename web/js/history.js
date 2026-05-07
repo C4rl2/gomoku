@@ -1,28 +1,26 @@
 function syncMoveHistory(limit) {
-  if (!Bridge.getMoveHistory) return;
   moveHistory = Bridge.getMoveHistory(limit);
 }
 
 function renderCurrentBoard(captureCells) {
   previewHistoryIndex = null;
   syncMoveHistory();
-  if (Render.clearWinHighlights) Render.clearWinHighlights();
+  Render.clearWinHighlights();
   Render.board(Bridge.getBoard(), moveHistory, { captureCells: captureCells || [] });
-  if (currentSuggestion && Render.suggestion && !Bridge.isGameOver())
+  if (currentSuggestion && !Bridge.isGameOver())
     Render.suggestion(currentSuggestion);
 }
 
 function renderMoveHistory(previewIndex) {
   var list = document.getElementById('move-history');
   var latestBtn = document.getElementById('history-latest-btn');
-  if (!list || !Bridge.getHistoryLength || !Bridge.getHistoryIndex) return;
+  if (!list) return;
 
   var length = Bridge.getHistoryLength();
   var currentIndex = Bridge.getHistoryIndex();
   list.innerHTML = '';
 
-  if (latestBtn)
-    latestBtn.disabled = aiThinking || currentIndex === length - 1;
+  latestBtn.disabled = aiThinking || currentIndex === length - 1;
 
   if (length <= 1) {
     var empty = document.createElement('p');
@@ -32,8 +30,7 @@ function renderMoveHistory(previewIndex) {
     return;
   }
 
-  list.appendChild(createHistoryRow(0, currentIndex, previewIndex));
-  for (var i = 1; i < length; i++)
+  for (var i = 0; i < length; i++)
     list.appendChild(createHistoryRow(i, currentIndex, previewIndex));
 }
 
@@ -76,12 +73,17 @@ function createHistoryBadges(index, player) {
   wrap.className = 'history-move__badges';
   if (index <= 0 || !player) return wrap;
 
-  var meta = getHistoryMoveMeta(index, player);
-  if (meta.captures > 0)
-    wrap.appendChild(createHistoryBadge('capture', 'x' + meta.captures));
-  if (meta.run >= 5)
+  var board = BoardUtils.snapshot(Bridge.getHistoryBoard(index));
+  var x = Bridge.getHistoryMoveX(index);
+  var y = Bridge.getHistoryMoveY(index);
+  var captures = Bridge.getHistoryCapturedCount(index);
+  var run = BoardUtils.longestRunThrough(board, x, y, player);
+
+  if (captures > 0)
+    wrap.appendChild(createHistoryBadge('capture', 'x' + captures));
+  if (run >= 5)
     wrap.appendChild(createHistoryBadge('threat', '5'));
-  else if (meta.run >= 4)
+  else if (run >= 4)
     wrap.appendChild(createHistoryBadge('threat', '4'));
   return wrap;
 }
@@ -93,26 +95,11 @@ function createHistoryBadge(type, label) {
   return badge;
 }
 
-function getHistoryMoveMeta(index, player) {
-  var current = BoardUtils.snapshot(Bridge.getHistoryBoard(index));
-  var x = Bridge.getHistoryMoveX(index);
-  var y = Bridge.getHistoryMoveY(index);
-  return {
-    captures: getHistoryCapturedCount(index),
-    run: BoardUtils.longestRunThrough(current, x, y, player)
-  };
-}
-
-function getHistoryCapturedCount(index) {
-  if (!Bridge.getHistoryCapturedCount) return 0;
-  return Bridge.getHistoryCapturedCount(index);
-}
-
 function previewHistory(index) {
-  if (aiThinking || !Bridge.getHistoryBoard) return;
+  if (aiThinking) return;
   previewHistoryIndex = index;
   syncMoveHistory(index);
-  if (Render.clearWinHighlights) Render.clearWinHighlights();
+  Render.clearWinHighlights();
   Render.board(Bridge.getHistoryBoard(index), moveHistory);
   updateHistoryPreviewClass(index);
 }
@@ -124,7 +111,7 @@ function restoreHistoryPreview() {
 }
 
 function gotoHistoryIndex(index) {
-  if (aiThinking || !Bridge.gotoHistory) return;
+  if (aiThinking) return;
   closeWinModal();
   if (Bridge.gotoHistory(index) !== 0) return;
   currentSuggestion = null;
@@ -143,7 +130,6 @@ function updateHistoryPreviewClass(index) {
 }
 
 function gotoLatestHistory() {
-  if (!Bridge.getHistoryLength) return;
   gotoHistoryIndex(Bridge.getHistoryLength() - 1);
 }
 
@@ -151,10 +137,7 @@ function updateUiFromBridgeState() {
   renderCurrentBoard();
   updateCaptures();
   if (Bridge.isGameOver()) {
-    var winner = Bridge.getWinner();
-    var names = { 1: 'Blue', 2: 'Pink', 3: 'Draw' };
-    setStatus(winner === 3 ? 'Draw!' : names[winner] + ' wins!');
-    updateTurnIndicator(winner === 3 ? 0 : winner);
+    setEndgameStatus();
   } else {
     setStatus('');
     updateTurnIndicator(Bridge.getCurrentPlayer());
