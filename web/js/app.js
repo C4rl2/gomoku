@@ -3,32 +3,23 @@ var HINT_DELAY_MS = 20;
 var HUMAN_AI_DELAY_MS = 20;
 var AI_V_AI_DELAY_MS = 180;
 
-Bridge.load(function () {
-  document.getElementById('start-btn').disabled = false;
-});
+Bridge.load();
 
 function startGame() {
   var depth = Math.max(1, Math.min(10, parseInt(document.getElementById('depth').value) || 5));
   var modeRadio = document.querySelector('input[name="mode"]:checked');
-  var hintToggle = document.getElementById('hint-toggle');
   currentMode = modeRadio ? parseInt(modeRadio.value, 10) : 0;
   currentSuggestion = null;
-  hintsEnabled = hintToggle ? hintToggle.checked : false;
+  hintsEnabled = document.getElementById('hint-toggle').checked;
   moveHistory = [];
   previewHistoryIndex = null;
   closeWinModal();
-  if (Render.clearWinHighlights) Render.clearWinHighlights();
+  Render.clearWinHighlights();
   Bridge.gameInit(depth, currentMode);
 
-  var startBtn = document.getElementById('start-btn');
-  var setupEl = document.getElementById('setup');
-  if (startBtn) startBtn.disabled = true;
-  if (setupEl) {
-    setupEl.classList.add('setup--leaving');
-    setTimeout(enterGameView, SETUP_EXIT_MS);
-  } else {
-    enterGameView();
-  }
+  document.getElementById('start-btn').disabled = true;
+  document.getElementById('setup').classList.add('setup--leaving');
+  setTimeout(enterGameView, SETUP_EXIT_MS);
 }
 
 function enterGameView() {
@@ -99,7 +90,7 @@ function refreshSuggestion() {
   var label = document.getElementById('suggestion');
   if (Bridge.isGameOver()) {
     currentSuggestion = null;
-    if (label) label.textContent = '';
+    label.textContent = '';
     return;
   }
 
@@ -115,14 +106,11 @@ function refreshSuggestion() {
     updateDebugPanel();
 
     renderCurrentBoard();
-    if (Render.suggestion) Render.suggestion(currentSuggestion);
+    Render.suggestion(currentSuggestion);
 
-    if (label) {
-      if (currentSuggestion)
-        label.textContent = 'Suggestion: (' + currentSuggestion.x + ', ' + currentSuggestion.y + ')';
-      else
-        label.textContent = '';
-    }
+    label.textContent = currentSuggestion
+      ? 'Suggestion: (' + currentSuggestion.x + ', ' + currentSuggestion.y + ')'
+      : '';
 
     setStatus(Bridge.getCurrentPlayer() === 1 ? 'Blue to play' : 'Pink to play');
     updateActionButtons();
@@ -158,9 +146,8 @@ function runAi() {
 }
 
 function finishAppliedMove(result) {
-  var capturedCells = Bridge.getLastCapturedCells ? Bridge.getLastCapturedCells() : [];
   syncMoveHistory();
-  renderCurrentBoard(capturedCells);
+  renderCurrentBoard(Bridge.getLastCapturedCells());
   updateCaptures();
   renderMoveHistory();
   updateActionButtons();
@@ -183,13 +170,9 @@ function finishAppliedMove(result) {
     updateTurnIndicator(Bridge.getCurrentPlayer());
     setStatus('');
   }
-  if (currentMode === MODE_AI_V_AI) {
-    scheduleAiTurn();
-    return;
-  }
-  if (currentMode === MODE_HUMAN_AI && Bridge.getCurrentPlayer() === 2) {
-    scheduleAiTurn();
-    return;
-  }
-  maybeRefreshHint();
+
+  var aiToPlay = currentMode === MODE_AI_V_AI
+    || (currentMode === MODE_HUMAN_AI && Bridge.getCurrentPlayer() === 2);
+  if (aiToPlay) scheduleAiTurn();
+  else maybeRefreshHint();
 }

@@ -83,24 +83,15 @@ var rulesBoardConfigs = {
   }
 };
 
-function openRulesModal(index) {
-  var modal = document.getElementById('rules-modal');
-  if (!modal) return;
-
-  if (typeof index === 'number')
-    rulesSlideIndex = index;
-  else
-    rulesSlideIndex = 0;
-
-  modal.hidden = false;
+function openRulesModal() {
+  rulesSlideIndex = 0;
+  document.getElementById('rules-modal').hidden = false;
   renderRulesBoards();
   updateRulesModal();
 }
 
 function closeRulesModal() {
-  var modal = document.getElementById('rules-modal');
-  if (!modal) return;
-  modal.hidden = true;
+  document.getElementById('rules-modal').hidden = true;
   clearRulesBoardAnimations();
 }
 
@@ -133,9 +124,6 @@ function getRuleSlides() {
 function buildRulesProgress() {
   var progress = document.getElementById('rules-progress');
   var slides = getRuleSlides();
-  if (!progress || !slides.length) return;
-  if (progress.children.length === slides.length) return;
-
   progress.innerHTML = '';
   for (var i = 0; i < slides.length; i++) {
     var step = document.createElement('button');
@@ -152,18 +140,11 @@ function buildRulesProgress() {
 
 function updateRulesModal() {
   var slides = getRuleSlides();
-  var backBtn = document.getElementById('rules-back-btn');
-  var nextLabel = document.getElementById('rules-next-label');
-  var progress = document.getElementById('rules-progress');
   var steps = document.querySelectorAll('.rules-step');
-  if (!slides.length) return;
+  var progress = document.getElementById('rules-progress');
 
-  if (rulesSlideIndex < 0) rulesSlideIndex = 0;
-  if (rulesSlideIndex >= slides.length) rulesSlideIndex = slides.length - 1;
-
-  for (var i = 0; i < slides.length; i++) {
+  for (var i = 0; i < slides.length; i++)
     slides[i].classList.toggle('rules-slide--active', i === rulesSlideIndex);
-  }
 
   for (var s = 0; s < steps.length; s++) {
     steps[s].classList.toggle('rules-step--active', s === rulesSlideIndex);
@@ -171,16 +152,15 @@ function updateRulesModal() {
     steps[s].setAttribute('aria-current', s === rulesSlideIndex ? 'step' : 'false');
   }
 
-  if (backBtn) backBtn.disabled = rulesSlideIndex === 0;
-  if (nextLabel)
-    nextLabel.textContent = rulesSlideIndex === slides.length - 1 ? "Let's play" : 'Next';
-  if (progress) {
-    var start = slides.length > 0 ? 100 / (slides.length * 2) : 0;
-    var track = 100 - (start * 2);
-    var fill = slides.length > 1 ? (rulesSlideIndex / (slides.length - 1) * track) : 0;
-    progress.style.setProperty('--rules-progress-start', start + '%');
-    progress.style.setProperty('--rules-progress-fill', fill + '%');
-  }
+  document.getElementById('rules-back-btn').disabled = rulesSlideIndex === 0;
+  document.getElementById('rules-next-label').textContent =
+    rulesSlideIndex === slides.length - 1 ? "Let's play" : 'Next';
+
+  var start = 100 / (slides.length * 2);
+  var track = 100 - (start * 2);
+  var fill = slides.length > 1 ? (rulesSlideIndex / (slides.length - 1) * track) : 0;
+  progress.style.setProperty('--rules-progress-start', start + '%');
+  progress.style.setProperty('--rules-progress-fill', fill + '%');
 
   activateRulesBoardAnimations();
 }
@@ -272,6 +252,8 @@ function clearRulesBoardAnimations() {
     highlighted[i].classList.remove('neo-cell--winning');
 }
 
+var RULES_WIN_STONE_DELAY_MS = 260;
+
 function scheduleRulesWinningLine(boardEl) {
   var config = rulesBoardConfigs[boardEl.dataset.rulesBoard];
   if (!config || !config.winning) return;
@@ -284,6 +266,6 @@ function scheduleRulesWinningLine(boardEl) {
         if (cell) cell.classList.add('neo-cell--winning');
       }, delay);
       rulesAnimationTimers.push(timer);
-    })(config.winning[i], i * 260);
+    })(config.winning[i], i * RULES_WIN_STONE_DELAY_MS);
   }
 }

@@ -1,41 +1,30 @@
+function applyTheme(theme) {
+  if (theme === 'dark')
+    document.documentElement.removeAttribute('data-theme');
+  else
+    document.documentElement.setAttribute('data-theme', 'light');
+}
+
 document.addEventListener('DOMContentLoaded', function () {
   var themeToggle = document.getElementById('theme-toggle');
   var depthSlider = document.getElementById('depth');
-  var savedTheme = localStorage.getItem('gomoku-theme');
+  var savedTheme = localStorage.getItem('gomoku-theme') === 'dark' ? 'dark' : 'light';
 
-  if (savedTheme === 'light')
-    document.documentElement.setAttribute('data-theme', 'light');
-  else
-    document.documentElement.removeAttribute('data-theme');
-
-  if (!themeToggle) return;
-
-  themeToggle.checked = savedTheme === 'light';
+  applyTheme(savedTheme);
+  themeToggle.checked = savedTheme === 'dark';
   updateDepthDisplay();
 
-  if (depthSlider)
-    depthSlider.addEventListener('input', updateDepthDisplay);
+  depthSlider.addEventListener('input', updateDepthDisplay);
 
   themeToggle.addEventListener('change', function (e) {
-    if (e.target.checked) {
-      document.documentElement.setAttribute('data-theme', 'light');
-      localStorage.setItem('gomoku-theme', 'light');
-    } else {
-      document.documentElement.removeAttribute('data-theme');
-      localStorage.setItem('gomoku-theme', 'dark');
-    }
-
-    if (document.getElementById('board') &&
-        document.getElementById('game').style.display !== 'none' &&
-        Bridge.getBoard) {
+    var theme = e.target.checked ? 'dark' : 'light';
+    applyTheme(theme);
+    localStorage.setItem('gomoku-theme', theme);
+    if (document.getElementById('game').style.display !== 'none')
       renderCurrentBoard();
-    }
   });
 });
 
 function updateDepthDisplay() {
-  var depthSlider = document.getElementById('depth');
-  var depthValue = document.getElementById('depth-value');
-  if (!depthSlider || !depthValue) return;
-  depthValue.textContent = depthSlider.value;
+  document.getElementById('depth-value').textContent = document.getElementById('depth').value;
 }

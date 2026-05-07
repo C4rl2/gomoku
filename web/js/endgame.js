@@ -1,31 +1,36 @@
 var WIN_MODAL_DELAY_MS = 1650;
 
+function setEndgameStatus() {
+  var w = Bridge.getWinner();
+  if (w === 3) {
+    setStatus('Draw!');
+    updateTurnIndicator(0);
+  } else {
+    setStatus((w === 1 ? 'Blue' : 'Pink') + ' wins!');
+    updateTurnIndicator(w);
+  }
+}
+
 function checkGameOver() {
   if (!Bridge.isGameOver()) return false;
-  var w = Bridge.getWinner();
-  var names = { 1: 'Blue', 2: 'Pink', 3: 'Draw' };
-  setStatus(w === 3 ? 'Draw!' : names[w] + ' wins!');
-  updateTurnIndicator(w === 3 ? 0 : w);
-  announceGameOver(w);
+  setEndgameStatus();
+  announceGameOver(Bridge.getWinner());
   updateActionButtons();
   return true;
 }
 
 function showBreakableFive() {
-  var line = Bridge.getWinningLine ? Bridge.getWinningLine() : [];
-  if (line && line.length && Render.winningLine)
-    Render.winningLine(line);
+  var line = Bridge.getWinningLine();
+  if (line.length) Render.winningLine(line);
   updateTurnIndicator(Bridge.getCurrentPlayer());
   setStatus('Breakable five - opponent can still capture');
 }
 
 function announceGameOver(winner) {
-  var line = (winner === 1 || winner === 2) && Bridge.getWinningLine ? Bridge.getWinningLine() : [];
-  if (line && line.length && Render.winningLine) {
+  var line = (winner === 1 || winner === 2) ? Bridge.getWinningLine() : [];
+  if (line.length) {
     Render.winningLine(line);
-    setTimeout(function () {
-      showWinModal(winner);
-    }, WIN_MODAL_DELAY_MS);
+    setTimeout(function () { showWinModal(winner); }, WIN_MODAL_DELAY_MS);
     return;
   }
   showWinModal(winner);
@@ -36,7 +41,6 @@ function showWinModal(winner) {
   var title = document.getElementById('win-title');
   var kicker = document.getElementById('win-kicker');
   var message = document.getElementById('win-message');
-  if (!modal || !title || !kicker || !message) return;
 
   modal.classList.remove('win-modal--blue', 'win-modal--pink', 'win-modal--draw');
 
@@ -61,7 +65,5 @@ function showWinModal(winner) {
 }
 
 function closeWinModal() {
-  var modal = document.getElementById('win-modal');
-  if (!modal) return;
-  modal.hidden = true;
+  document.getElementById('win-modal').hidden = true;
 }

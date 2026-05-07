@@ -1,18 +1,17 @@
-
-var Render = (function() {
+var Render = (function () {
   var CAPTURE_ANIMATION_MS = 560;
   var WIN_STONE_DELAY_MS = 260;
+  var SIZE = BoardUtils.BOARD_SIZE;
   var boardEl = null;
-  var cells   = [];
-  var COL_LABELS = ['A','B','C','D','E','F','G','H','J','K','L','M','N','O','P','Q','R','S','T'];
+  var cells = [];
 
   function init(el) {
     boardEl = el;
     boardEl.innerHTML = "";
     cells = [];
 
-    for (var y = 0; y < BoardUtils.BOARD_SIZE; y++) {
-      for (var x = 0; x < BoardUtils.BOARD_SIZE; x++) {
+    for (var y = 0; y < SIZE; y++) {
+      for (var x = 0; x < SIZE; x++) {
         var cell = document.createElement("div");
         cell.className = "neo-cell";
         cell.dataset.x = x;
@@ -22,83 +21,73 @@ var Render = (function() {
       }
     }
 
-    var colsEl = document.getElementById("coords-cols");
-    var rowsEl = document.getElementById("coords-rows");
-    if (colsEl) {
-      colsEl.innerHTML = "";
-      for (var c = 0; c < BoardUtils.BOARD_SIZE; c++) {
-        var span = document.createElement("span");
-        span.textContent = COL_LABELS[c];
-        colsEl.appendChild(span);
-      }
-    }
-    if (rowsEl) {
-      rowsEl.innerHTML = "";
-      for (var r = 1; r <= BoardUtils.BOARD_SIZE; r++) {
-        var span = document.createElement("span");
-        span.textContent = r;
-        rowsEl.appendChild(span);
-      }
+    fillCoords("coords-cols", function (i) { return COORD_COLS[i]; });
+    fillCoords("coords-rows", function (i) { return i + 1; });
+  }
+
+  function fillCoords(id, label) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.innerHTML = "";
+    for (var i = 0; i < SIZE; i++) {
+      var span = document.createElement("span");
+      span.textContent = label(i);
+      el.appendChild(span);
     }
   }
 
   function board(stones, moveHistory, options) {
     var moveNumbers = buildMoveNumberMap(moveHistory || []);
     var captureMap = buildCaptureMap(options && options.captureCells);
-    for (var i = 0; i < BoardUtils.BOARD_SIZE * BoardUtils.BOARD_SIZE; i++) {
-        var s = stones[i];
-        var cell = cells[i];
+    for (var i = 0; i < SIZE * SIZE; i++) {
+      var s = stones[i];
+      var cell = cells[i];
 
-        if (s === 0) {
-            if (captureMap[i] && cell.querySelector(".neo-stone")) {
-              animateCapturedCell(cell);
-            } else if (cell.classList.contains("neo-cell--capturing")) {
-              continue;
-            } else {
-              cell.innerHTML = "";
-              cell.classList.remove("neo-cell--capturing");
-            }
+      if (s === 0) {
+        if (captureMap[i] && cell.querySelector(".neo-stone")) {
+          animateCapturedCell(cell);
+        } else if (!cell.classList.contains("neo-cell--capturing")) {
+          cell.innerHTML = "";
         }
-        else {
-            var existingStone = cell.querySelector(".neo-stone");
-            var colorClass = s === 1 ? "black" : "white";
-            var moveNum = moveNumbers[i] || 0;
-            if (!existingStone) {
-              var stone = document.createElement("div");
-              stone.className = "neo-stone " + colorClass;
-              if (moveNum > 0) {
-                var numSpan = document.createElement("span");
-                numSpan.className = "stone-num";
-                numSpan.textContent = moveNum;
-                stone.appendChild(numSpan);
-              }
-              cell.appendChild(stone);
-            } else {
-              cell.classList.remove("neo-cell--capturing");
-              existingStone.className = "neo-stone " + colorClass;
-              var existingNum = existingStone.querySelector(".stone-num");
-              if (moveNum > 0) {
-                if (!existingNum) {
-                  var numSpan = document.createElement("span");
-                  numSpan.className = "stone-num";
-                  existingStone.appendChild(numSpan);
-                  existingNum = numSpan;
-                }
-                existingNum.textContent = moveNum;
-              } else if (existingNum) {
-                existingStone.removeChild(existingNum);
-              }
-            }
+        continue;
+      }
+
+      var existingStone = cell.querySelector(".neo-stone");
+      var colorClass = s === 1 ? "black" : "white";
+      var moveNum = moveNumbers[i] || 0;
+      if (!existingStone) {
+        var stone = document.createElement("div");
+        stone.className = "neo-stone " + colorClass;
+        if (moveNum > 0) {
+          var numSpan = document.createElement("span");
+          numSpan.className = "stone-num";
+          numSpan.textContent = moveNum;
+          stone.appendChild(numSpan);
         }
+        cell.appendChild(stone);
+      } else {
+        cell.classList.remove("neo-cell--capturing");
+        existingStone.className = "neo-stone " + colorClass;
+        var existingNum = existingStone.querySelector(".stone-num");
+        if (moveNum > 0) {
+          if (!existingNum) {
+            existingNum = document.createElement("span");
+            existingNum.className = "stone-num";
+            existingStone.appendChild(existingNum);
+          }
+          existingNum.textContent = moveNum;
+        } else if (existingNum) {
+          existingStone.removeChild(existingNum);
+        }
+      }
     }
   }
 
   function buildCaptureMap(captureCells) {
     var map = {};
     if (!captureCells) return map;
-    for (var i = 0; i < captureCells.length; i++) {
+    for (var i = 0; i < captureCells.length; i++)
       map[BoardUtils.index(captureCells[i].x, captureCells[i].y)] = true;
-    }
     return map;
   }
 
@@ -114,7 +103,7 @@ var Render = (function() {
     if (!stone) return;
     cell.classList.add("neo-cell--capturing");
     stone.classList.add("neo-stone--captured");
-    setTimeout(function() {
+    setTimeout(function () {
       if (!cell.classList.contains("neo-cell--capturing")) return;
       cell.innerHTML = "";
       cell.classList.remove("neo-cell--capturing");
@@ -124,17 +113,16 @@ var Render = (function() {
   function clearWinHighlights() {
     if (!boardEl) return;
     var highlighted = boardEl.querySelectorAll(".neo-cell--winning");
-    for (var i = 0; i < highlighted.length; i++) {
+    for (var i = 0; i < highlighted.length; i++)
       highlighted[i].classList.remove("neo-cell--winning");
-    }
   }
 
   function winningLine(line) {
     clearWinHighlights();
     if (!line || !cells.length) return;
     for (var i = 0; i < line.length; i++) {
-      (function(cellInfo, delay) {
-        setTimeout(function() {
+      (function (cellInfo, delay) {
+        setTimeout(function () {
           var idx = BoardUtils.index(cellInfo.x, cellInfo.y);
           if (cells[idx]) cells[idx].classList.add("neo-cell--winning");
         }, delay);
@@ -151,29 +139,27 @@ var Render = (function() {
     };
   }
 
-  // Suggestions are re-applied after board() because empty cells are rebuilt.
+  // Re-applied after board() because empty cells are rebuilt.
   function suggestion(cell) {
     var prev = boardEl ? boardEl.querySelector(".neo-suggestion") : null;
     if (prev && prev.parentNode) prev.parentNode.removeChild(prev);
     if (!cell || !cells.length) return;
-    var idx = BoardUtils.index(cell.x, cell.y);
-    var target = cells[idx];
+    var target = cells[BoardUtils.index(cell.x, cell.y)];
     if (!target) return;
     var marker = document.createElement("div");
     marker.className = "neo-suggestion";
     var core = document.createElement("span");
     core.className = "neo-suggestion__core";
     marker.appendChild(core);
-    target.style.position = target.style.position || "relative";
     target.appendChild(marker);
   }
 
   return {
-    init:          init,
-    board:         board,
+    init: init,
+    board: board,
     cellFromClick: cellFromClick,
-    suggestion:    suggestion,
-    winningLine:   winningLine,
+    suggestion: suggestion,
+    winningLine: winningLine,
     clearWinHighlights: clearWinHighlights
   };
 })();
