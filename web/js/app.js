@@ -164,9 +164,7 @@ function finishAppliedMove(result) {
     return;
   }
   if (checkGameOver()) return;
-  if (result === 2) {
-    showBreakableFive();
-  } else {
+ else {
     updateTurnIndicator(Bridge.getCurrentPlayer());
     setStatus('');
   }

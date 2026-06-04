@@ -19,13 +19,6 @@ function checkGameOver() {
   return true;
 }
 
-function showBreakableFive() {
-  var line = Bridge.getWinningLine();
-  if (line.length) Render.winningLine(line);
-  updateTurnIndicator(Bridge.getCurrentPlayer());
-  setStatus('Breakable five - opponent can still capture');
-}
-
 function announceGameOver(winner) {
   var line = (winner === 1 || winner === 2) ? Bridge.getWinningLine() : [];
   if (line.length) {
